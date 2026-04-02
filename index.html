@@ -124,32 +124,47 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#fff;padding:.6rem 1.1rem;border-radius:var(--radius-sm);font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .25s;z-index:1000}
 .toast.show{transform:translateY(0);opacity:1}
 .or-divider{align-self:center;color:var(--text-hint);font-size:12px;flex-shrink:0;padding-top:16px}
-
-/* Event log */
 .event-log{margin-top:.5rem;display:flex;flex-direction:column;gap:.4rem}
-.event-item{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem .7rem;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;position:relative}
+.event-item{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem .7rem;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px}
 .event-item.goal{background:var(--goal-bg);border-color:var(--goal-border)}
 .event-item.penalty{background:var(--penalty-bg);border-color:var(--penalty-border)}
 .event-icon{font-size:15px;flex-shrink:0;margin-top:1px}
 .event-body{flex:1;min-width:0}
 .event-main{font-weight:600;color:var(--text)}
 .event-detail{font-size:12px;color:var(--text-muted);margin-top:1px}
-.event-time{font-size:11px;font-variant-numeric:tabular-nums;color:var(--text-hint);flex-shrink:0;margin-top:2px}
+.event-time{font-size:11px;font-variant-numeric:tabular-nums;color:var(--text-hint);flex-shrink:0;margin-top:2px;white-space:nowrap}
 .event-rm{cursor:pointer;color:var(--text-hint);font-size:14px;line-height:1;flex-shrink:0;margin-top:2px;transition:color .1s}
 .event-rm:hover{color:#dc2626}
-
-/* Sub-tabs inside game card */
-.game-subtabs{display:flex;gap:4px;margin-bottom:.75rem;border-bottom:1px solid var(--border);padding-bottom:.5rem}
+.game-subtabs{display:flex;gap:4px;margin-bottom:.75rem;border-bottom:1px solid var(--border);padding-bottom:.5rem;flex-wrap:wrap}
 .game-subtab{padding:4px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-muted);background:none;border:none;transition:all .12s}
-.game-subtab.active{background:var(--green);color:#fff;border-radius:var(--radius-sm)}
+.game-subtab.active{background:var(--green);color:#fff}
 .game-subtab:hover:not(.active){background:var(--border)}
 .subpanel{display:none}.subpanel.active{display:block}
-
-/* Penalty duration pills */
 .dur-btns{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}
 .dur-btn{padding:3px 10px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;font-weight:500;transition:all .12s}
 .dur-btn.active{background:var(--penalty-bg);border-color:var(--penalty-border);color:var(--penalty-text)}
+/* manual time input highlight */
+.time-manual{border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 8px;font-size:13px;background:var(--surface);color:var(--text);width:80px;font-variant-numeric:tabular-nums}
+.time-manual:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,56,.1);outline:none}
+.time-hint{font-size:11px;color:var(--text-hint);margin-top:3px}
 
+/* Stats table */
+.stats-section{margin-bottom:1.5rem}
+.stats-section-title{font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.stats-table{width:100%;border-collapse:collapse;font-size:13px}
+.stats-table th{text-align:left;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
+.stats-table th.num{text-align:right}
+.stats-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.stats-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.stats-table tr:last-child td{border-bottom:none}
+.stats-table tr:hover td{background:var(--bg)}
+.rank-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;background:var(--bg);color:var(--text-muted);flex-shrink:0}
+.rank-num.gold{background:#fef08a;color:#713f12}
+.rank-num.silver{background:#e2e8f0;color:#334155}
+.rank-num.bronze{background:#fed7aa;color:#7c2d12}
+.stats-filter{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center}
+.stats-filter label{font-size:12px;font-weight:600;color:var(--text-muted)}
+.stats-filter select{width:auto;flex:none;min-width:120px}
 @media(max-width:500px){.game-teams{gap:.15rem}.score-num{font-size:2.1rem}}
 </style>
 </head>
@@ -177,6 +192,7 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
     <div class="tab" onclick="switchTab('games')">🏟 Games</div>
     <div class="tab" onclick="switchTab('teams')">👥 Teams</div>
     <div class="tab" onclick="switchTab('officials')">🦺 Officials</div>
+    <div class="tab" onclick="switchTab('stats')">📊 Statistics</div>
   </div>
 
   <!-- OVERVIEW -->
@@ -197,9 +213,7 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
         <div class="form-group" style="max-width:120px">
           <label>Division</label>
           <select id="ng-division" onchange="updateTeamDropdowns()">
-            <option value="men">Men</option>
-            <option value="women">Women</option>
-            <option value="youth">Youth</option>
+            <option value="men">Men</option><option value="women">Women</option><option value="youth">Youth</option>
           </select>
         </div>
         <div class="form-group">
@@ -218,14 +232,8 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
             <input id="ng-away-custom" placeholder="Type name" style="flex:1;min-width:0">
           </div>
         </div>
-        <div class="form-group" style="max-width:115px">
-          <label>Kick-off</label>
-          <input type="time" id="ng-time">
-        </div>
-        <div class="form-group" style="max-width:115px">
-          <label>Field</label>
-          <input id="ng-field" placeholder="Field 1">
-        </div>
+        <div class="form-group" style="max-width:115px"><label>Kick-off</label><input type="time" id="ng-time"></div>
+        <div class="form-group" style="max-width:115px"><label>Field</label><input id="ng-field" placeholder="Field 1"></div>
       </div>
       <div style="display:flex;gap:.5rem;margin-top:.75rem">
         <button class="btn btn-primary" onclick="addGame()">Add game</button>
@@ -288,12 +296,7 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
       <div class="form-row">
         <div class="form-group"><label>Name</label><input id="ref-input" placeholder="Referee name" onkeydown="if(event.key==='Enter')addOfficial('refs')"></div>
         <div class="form-group" style="max-width:140px"><label>Cert level</label>
-          <select id="ref-cert">
-            <option value="">No cert</option>
-            <option value="Level 1">Level 1</option>
-            <option value="Level 2">Level 2</option>
-            <option value="Level 3">Level 3</option>
-          </select>
+          <select id="ref-cert"><option value="">No cert</option><option value="Level 1">Level 1</option><option value="Level 2">Level 2</option><option value="Level 3">Level 3</option></select>
         </div>
         <div style="padding-top:18px"><button class="btn btn-primary" onclick="addOfficial('refs')">Add</button></div>
       </div>
@@ -307,6 +310,24 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
       </div>
       <div class="player-list" id="bench-list" style="margin-top:.75rem"></div>
     </div>
+  </div>
+
+  <!-- STATISTICS -->
+  <div id="tab-stats" class="panel">
+    <div class="stats-filter">
+      <label>Filter by division:</label>
+      <select id="stats-div-filter" onchange="renderStats()">
+        <option value="all">All divisions</option>
+        <option value="men">Men</option>
+        <option value="women">Women</option>
+        <option value="youth">Youth</option>
+      </select>
+      <label style="margin-left:.5rem">Team:</label>
+      <select id="stats-team-filter" onchange="renderStats()">
+        <option value="all">All teams</option>
+      </select>
+    </div>
+    <div id="stats-content"></div>
   </div>
 </div>
 
@@ -322,7 +343,6 @@ const firebaseConfig = {
   messagingSenderId: "918277647316",
   appId: "1:918277647316:web:9d23f3a0b0ae49fdb78441"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const DOC_REF = doc(db, 'gameday', 'main');
@@ -346,9 +366,13 @@ onSnapshot(DOC_REF, snap=>{
     const r=snap.data();
     state={
       date:r.date||'', venue:r.venue||'',
-      teams:{men:r.teams?.men||[], women:r.teams?.women||[], youth:r.teams?.youth||[]},
+      teams:{
+        men:(r.teams?.men||[]).map(t=>({...t,players:normPlayers(t.players||[])})),
+        women:(r.teams?.women||[]).map(t=>({...t,players:normPlayers(t.players||[])})),
+        youth:(r.teams?.youth||[]).map(t=>({...t,players:normPlayers(t.players||[])}))
+      },
       officials:{refs:r.officials?.refs||[], bench:r.officials?.bench||[]},
-      games:(r.games||[]).map(g=>({...g, events:g.events||[]}))
+      games:(r.games||[]).map(g=>({...g,events:g.events||[]}))
     };
     applyState();
   } else { document.getElementById('loading').classList.add('hidden'); applyState(); }
@@ -362,6 +386,7 @@ function applyState(){
   ['men','women','youth'].forEach(renderTeams);
   ['refs','bench'].forEach(renderOfficials);
   renderAllGames(); renderOverview(); updateTeamDropdowns();
+  updateStatsTeamFilter();
 }
 
 function updateMeta(){
@@ -372,60 +397,83 @@ document.getElementById('event-date').addEventListener('change',e=>{ state.date=
 document.getElementById('event-venue').addEventListener('input',e=>{ state.venue=e.target.value; updateMeta(); scheduleSave(); });
 
 window.switchTab=function(tab){
-  ['overview','games','teams','officials'].forEach((t,i)=>document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab));
+  ['overview','games','teams','officials','stats'].forEach((t,i)=>document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='overview') renderOverview();
   if(tab==='games') updateTeamDropdowns();
+  if(tab==='stats'){ updateStatsTeamFilter(); renderStats(); }
 };
 
 window.toggleForm=function(id){ const el=document.getElementById(id); el.style.display=el.style.display==='none'?'block':'none'; };
 
-// TEAMS
+// ---- TEAMS ----
 window.addTeam=function(div){
   const inp=document.getElementById('new-team-'+div), name=inp.value.trim(); if(!name) return;
   if(state.teams[div].find(t=>t.name.toLowerCase()===name.toLowerCase())){ showToast('Team already exists'); return; }
   state.teams[div].push({id:Date.now().toString(),name,players:[]});
-  inp.value=''; renderTeams(div); scheduleSave(); updateTeamDropdowns();
+  inp.value=''; renderTeams(div); scheduleSave(); updateTeamDropdowns(); updateStatsTeamFilter();
 };
 window.removeTeam=function(div,id){
   if(!confirm('Remove this team and all its players?')) return;
   state.teams[div]=state.teams[div].filter(t=>t.id!==id);
-  renderTeams(div); scheduleSave(); updateTeamDropdowns();
+  renderTeams(div); scheduleSave(); updateTeamDropdowns(); updateStatsTeamFilter();
 };
+// players are stored as {name, number} objects. number may be '' or a string like '7'
+function normPlayers(players){
+  // migrate legacy string players to objects
+  return (players||[]).map(p=>typeof p==='string'?{name:p,number:''}:p);
+}
+function sortPlayers(players){
+  return [...normPlayers(players)].sort((a,b)=>{
+    const na=a.number===''?Infinity:parseInt(a.number)||0;
+    const nb=b.number===''?Infinity:parseInt(b.number)||0;
+    if(na!==nb) return na-nb;
+    return a.name.localeCompare(b.name);
+  });
+}
+function playerLabel(p){ return p.number!==''?'#'+p.number+' '+p.name:p.name; }
+
 window.addPlayer=function(div,teamId){
-  const inp=document.getElementById('player-inp-'+teamId), name=inp.value.trim(); if(!name) return;
+  const nameInp=document.getElementById('player-inp-'+teamId);
+  const numInp=document.getElementById('player-num-'+teamId);
+  const name=nameInp.value.trim(); if(!name) return;
+  const number=(numInp?numInp.value.trim():'');
   const team=state.teams[div].find(t=>t.id===teamId); if(!team) return;
-  if(team.players.includes(name)){ showToast('Already on roster'); return; }
-  team.players.push(name); inp.value=''; renderTeams(div); scheduleSave();
+  team.players=normPlayers(team.players);
+  if(team.players.find(p=>p.name.toLowerCase()===name.toLowerCase())){ showToast('Already on roster'); return; }
+  team.players.push({name,number});
+  team.players=sortPlayers(team.players);
+  nameInp.value=''; if(numInp) numInp.value='';
+  renderTeams(div); scheduleSave();
 };
 window.removePlayer=function(div,teamId,name){
   const team=state.teams[div].find(t=>t.id===teamId);
-  if(team){ team.players=team.players.filter(p=>p!==name); renderTeams(div); scheduleSave(); }
+  if(team){ team.players=normPlayers(team.players).filter(p=>p.name!==name); renderTeams(div); scheduleSave(); }
 };
-
 function renderTeams(div){
   const el=document.getElementById('teams-'+div), teams=state.teams[div]||[];
   if(!teams.length){ el.innerHTML='<div class="empty" style="padding:.5rem 0">No teams yet.</div>'; return; }
-  el.innerHTML=teams.map(team=>`
+  el.innerHTML=teams.map(team=>{
+    const sorted=sortPlayers(team.players);
+    return `
     <div class="team-block">
       <div class="team-block-header">
-        <div class="team-block-name">
-          <span class="badge badge-${div}">${cap(div)}</span>${team.name}
-          <span style="font-size:12px;color:var(--text-hint);font-weight:400">${team.players.length} player${team.players.length!==1?'s':''}</span>
+        <div class="team-block-name"><span class="badge badge-${div}">${cap(div)}</span>${team.name}
+          <span style="font-size:12px;color:var(--text-hint);font-weight:400">${sorted.length} player${sorted.length!==1?'s':''}</span>
         </div>
         <button class="btn btn-sm btn-danger" onclick="removeTeam('${div}','${team.id}')">Remove team</button>
       </div>
-      <div class="form-row" style="margin-top:.5rem">
-        <input id="player-inp-${team.id}" placeholder="Add player name" onkeydown="if(event.key==='Enter')addPlayer('${div}','${team.id}')">
-        <button class="btn btn-primary btn-sm" onclick="addPlayer('${div}','${team.id}')">Add</button>
+      <div class="form-row" style="margin-top:.5rem;align-items:flex-end">
+        <div class="form-group" style="max-width:70px"><label style="font-size:11px;color:var(--text-hint)">#</label><input id="player-num-${team.id}" placeholder="No." type="number" min="0" max="999" onkeydown="if(event.key==='Enter')addPlayer('${div}','${team.id}')"></div>
+        <div class="form-group"><label style="font-size:11px;color:var(--text-hint)">Name</label><input id="player-inp-${team.id}" placeholder="Player name" onkeydown="if(event.key==='Enter')addPlayer('${div}','${team.id}')"></div>
+        <button class="btn btn-primary btn-sm" style="margin-bottom:1px" onclick="addPlayer('${div}','${team.id}')">Add</button>
       </div>
       <div class="player-list">
-        ${team.players.length
-          ? team.players.map(p=>`<div class="player-chip">${p}<span class="chip-rm" onclick="removePlayer('${div}','${team.id}','${esc(p)}')">×</span></div>`).join('')
-          : '<div class="empty">No players yet.</div>'}
+        ${sorted.length ? sorted.map(p=>`<div class="player-chip">${p.number!==''?'<span style="font-size:11px;font-weight:700;color:var(--text-hint);min-width:18px">#'+p.number+'</span>':''}<span>${p.name}</span><span class="chip-rm" onclick="removePlayer('${div}','${team.id}','${esc(p.name)}')">×</span></div>`).join('') : '<div class="empty">No players yet.</div>'}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 window.updateTeamDropdowns=function(){
@@ -437,20 +485,16 @@ window.updateTeamDropdowns=function(){
   });
 };
 
-// GAMES
+// ---- GAMES ----
 window.addGame=function(){
   const div=document.getElementById('ng-division').value;
   const home=(document.getElementById('ng-home-custom').value.trim())||document.getElementById('ng-home-select').value;
   const away=(document.getElementById('ng-away-custom').value.trim())||document.getElementById('ng-away-select').value;
   if(!home||!away){ showToast('Enter both team names',true); return; }
   if(home===away){ showToast('Home and away must be different',true); return; }
-  state.games.push({
-    id:Date.now().toString(), division:div, homeTeam:home, awayTeam:away,
-    homeScore:0, awayScore:0,
-    time:document.getElementById('ng-time').value,
-    field:document.getElementById('ng-field').value.trim(),
-    refs:[], bench:[], status:'scheduled', elapsed:0, startedAt:null, events:[]
-  });
+  state.games.push({ id:Date.now().toString(), division:div, homeTeam:home, awayTeam:away, homeScore:0, awayScore:0,
+    time:document.getElementById('ng-time').value, field:document.getElementById('ng-field').value.trim(),
+    refs:[], bench:[], status:'scheduled', elapsed:0, startedAt:null, events:[] });
   scheduleSave();
   ['ng-home-custom','ng-away-custom','ng-field','ng-time'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ng-home-select').value=''; document.getElementById('ng-away-select').value='';
@@ -486,7 +530,7 @@ window.toggleAssign=function(gameId,type,name){
   scheduleSave(); renderAssignPanels(gameId); renderOverview();
 };
 
-// ---- EVENTS: goals & penalties ----
+// ---- EVENTS ----
 window.switchSubTab=function(gameId,tab){
   ['score','goal','penalty','log'].forEach(t=>{
     const btn=document.getElementById('stab-'+gameId+'-'+t);
@@ -496,28 +540,31 @@ window.switchSubTab=function(gameId,tab){
   });
 };
 
-// Track which duration is selected per game
 const penaltyDur={};
 window.selectDur=function(gameId,dur){
   penaltyDur[gameId]=dur;
-  document.querySelectorAll('[data-dur-game="'+gameId+'"]').forEach(b=>{
-    b.classList.toggle('active', b.dataset.dur===dur);
-  });
+  document.querySelectorAll('[data-dur-game="'+gameId+'"]').forEach(b=>b.classList.toggle('active',b.dataset.dur===dur));
 };
 
 function getGamePlayers(g){
   const div=g.division;
-  const homePlayers=((state.teams[div]||[]).find(t=>t.name===g.homeTeam)||{players:[]}).players;
-  const awayPlayers=((state.teams[div]||[]).find(t=>t.name===g.awayTeam)||{players:[]}).players;
-  return {homePlayers, awayPlayers, allPlayers:[...homePlayers,...awayPlayers]};
+  const hp=sortPlayers(((state.teams[div]||[]).find(t=>t.name===g.homeTeam)||{players:[]}).players);
+  const ap=sortPlayers(((state.teams[div]||[]).find(t=>t.name===g.awayTeam)||{players:[]}).players);
+  return {homePlayers:hp, awayPlayers:ap, allPlayers:[...hp,...ap]};
 }
-
-function playerOptions(players, includeBlank=true, blankLabel='— none —'){
-  return (includeBlank?`<option value="">${blankLabel}</option>`:'')+players.map(p=>`<option value="${p}">${p}</option>`).join('');
+function playerOptions(players, blankLabel='— none —'){
+  return `<option value="">${blankLabel}</option>`+sortPlayers(players).map(p=>`<option value="${p.name}">${playerLabel(p)}</option>`).join('');
 }
-
 function teamOptions(g){
   return `<option value="${g.homeTeam}">${g.homeTeam}</option><option value="${g.awayTeam}">${g.awayTeam}</option>`;
+}
+
+// parse "mm:ss" or "mm" string to seconds
+function parseManualTime(s){
+  s=(s||'').trim();
+  if(!s) return null;
+  if(s.includes(':')){ const [m,sec]=s.split(':'); return (parseInt(m)||0)*60+(parseInt(sec)||0); }
+  return (parseInt(s)||0)*60; // bare number = minutes
 }
 
 window.addGoal=function(gameId){
@@ -526,14 +573,20 @@ window.addGoal=function(gameId){
   const scorer=document.getElementById('goal-scorer-'+gameId).value.trim()||document.getElementById('goal-scorer-sel-'+gameId).value;
   const a1=document.getElementById('goal-a1-'+gameId).value.trim()||document.getElementById('goal-a1-sel-'+gameId).value;
   const a2=document.getElementById('goal-a2-'+gameId).value.trim()||document.getElementById('goal-a2-sel-'+gameId).value;
-  const elapsed=g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
+  const manualTime=document.getElementById('goal-time-'+gameId).value.trim();
   if(!scorer){ showToast('Enter a scorer',true); return; }
+  const parsedTime=parseManualTime(manualTime);
+  const autoTime=g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
+  const time = parsedTime!==null ? parsedTime : autoTime;
+  const timeLabel = manualTime||fmtTime(autoTime);
   if(!g.events) g.events=[];
-  g.events.push({id:Date.now().toString(), type:'goal', team, scorer, a1, a2, time:elapsed});
-  // auto-increment score
+  g.events.push({id:Date.now().toString(), type:'goal', team, scorer, a1, a2, time, timeLabel});
   if(team===g.homeTeam) g.homeScore=(g.homeScore||0)+1;
   else g.awayScore=(g.awayScore||0)+1;
-  scheduleSave(); renderAllGames(); renderOverview(); showToast('⚽ Goal recorded!');
+  // clear fields
+  ['goal-scorer-'+gameId,'goal-a1-'+gameId,'goal-a2-'+gameId,'goal-time-'+gameId].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['goal-scorer-sel-'+gameId,'goal-a1-sel-'+gameId,'goal-a2-sel-'+gameId].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  scheduleSave(); renderAllGames(); renderOverview(); showToast('🥍 Goal recorded!');
 };
 
 window.addPenalty=function(gameId){
@@ -541,11 +594,21 @@ window.addPenalty=function(gameId){
   const team=document.getElementById('pen-team-'+gameId).value;
   const player=document.getElementById('pen-player-'+gameId).value.trim()||document.getElementById('pen-player-sel-'+gameId).value;
   const penType=document.getElementById('pen-type-'+gameId).value.trim();
+  const manualTime=document.getElementById('pen-time-'+gameId).value.trim();
   const dur=penaltyDur[gameId]||document.getElementById('pen-dur-custom-'+gameId).value.trim();
-  const elapsed=g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
   if(!player){ showToast('Enter a player',true); return; }
+  const parsedTime=parseManualTime(manualTime);
+  const autoTime=g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
+  const time = parsedTime!==null ? parsedTime : autoTime;
+  const timeLabel = manualTime||fmtTime(autoTime);
+  // parse penalty minutes from dur string for stats
+  const penMins = dur ? (parseFloat(dur)||0) : 0;
   if(!g.events) g.events=[];
-  g.events.push({id:Date.now().toString(), type:'penalty', team, player, penType, dur, time:elapsed});
+  g.events.push({id:Date.now().toString(), type:'penalty', team, player, penType, dur, time, timeLabel, penMins});
+  ['pen-player-'+gameId,'pen-type-'+gameId,'pen-time-'+gameId,'pen-dur-custom-'+gameId].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['pen-player-sel-'+gameId].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  delete penaltyDur[gameId];
+  document.querySelectorAll('[data-dur-game="'+gameId+'"]').forEach(b=>b.classList.remove('active'));
   scheduleSave(); renderAllGames(); renderOverview(); showToast('🟨 Penalty recorded!');
 };
 
@@ -561,72 +624,68 @@ window.removeEvent=function(gameId,eventId){
 };
 
 function goalFormHTML(g){
-  const {homePlayers,awayPlayers,allPlayers}=getGamePlayers(g);
-  return `
-    <div style="margin-bottom:.6rem">
-      <div class="form-group" style="margin-bottom:.5rem">
-        <label>Scoring team</label>
-        <select id="goal-team-${g.id}">${teamOptions(g)}</select>
+  const {allPlayers}=getGamePlayers(g);
+  return `<div style="margin-bottom:.6rem">
+    <div class="form-row" style="margin-bottom:.5rem">
+      <div class="form-group" style="max-width:160px"><label>Scoring team</label><select id="goal-team-${g.id}">${teamOptions(g)}</select></div>
+      <div class="form-group" style="max-width:110px">
+        <label>Game time</label>
+        <input class="time-manual" id="goal-time-${g.id}" placeholder="e.g. 12:34">
+        <div class="time-hint">mm:ss or mm (blank = clock)</div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Scorer</label>
-          <select id="goal-scorer-sel-${g.id}">${playerOptions(allPlayers,true,'— pick —')}</select>
-          <input id="goal-scorer-${g.id}" placeholder="or type name" style="margin-top:4px">
-        </div>
-        <div class="form-group">
-          <label>1st assist</label>
-          <select id="goal-a1-sel-${g.id}">${playerOptions(allPlayers,true,'— none —')}</select>
-          <input id="goal-a1-${g.id}" placeholder="or type name" style="margin-top:4px">
-        </div>
-        <div class="form-group">
-          <label>2nd assist</label>
-          <select id="goal-a2-sel-${g.id}">${playerOptions(allPlayers,true,'— none —')}</select>
-          <input id="goal-a2-${g.id}" placeholder="or type name" style="margin-top:4px">
-        </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Scorer</label>
+        <select id="goal-scorer-sel-${g.id}">${playerOptions(allPlayers,'— pick —')}</select>
+        <input id="goal-scorer-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
-      <div style="margin-top:.5rem">
-        <button class="btn btn-primary btn-sm" onclick="addGoal('${g.id}')">+ Record goal</button>
+      <div class="form-group"><label>1st assist</label>
+        <select id="goal-a1-sel-${g.id}">${playerOptions(allPlayers,'— none —')}</select>
+        <input id="goal-a1-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
-    </div>`;
+      <div class="form-group"><label>2nd assist</label>
+        <select id="goal-a2-sel-${g.id}">${playerOptions(allPlayers,'— none —')}</select>
+        <input id="goal-a2-${g.id}" placeholder="or type name" style="margin-top:4px">
+      </div>
+    </div>
+    <div style="margin-top:.5rem"><button class="btn btn-primary btn-sm" onclick="addGoal('${g.id}')">+ Record goal</button></div>
+  </div>`;
 }
 
 function penaltyFormHTML(g){
   const {allPlayers}=getGamePlayers(g);
   const selDur=penaltyDur[g.id]||'';
   const durations=['30s','1 min','2 min','3 min','5 min'];
-  return `
-    <div style="margin-bottom:.6rem">
-      <div class="form-row" style="margin-bottom:.5rem">
-        <div class="form-group" style="max-width:160px">
-          <label>Team committing</label>
-          <select id="pen-team-${g.id}">${teamOptions(g)}</select>
-        </div>
-        <div class="form-group">
-          <label>Player</label>
-          <select id="pen-player-sel-${g.id}">${playerOptions(allPlayers,true,'— pick —')}</select>
-          <input id="pen-player-${g.id}" placeholder="or type name" style="margin-top:4px">
-        </div>
-        <div class="form-group">
-          <label>Penalty type</label>
-          <input id="pen-type-${g.id}" placeholder="e.g. Slashing, Tripping">
-        </div>
+  return `<div style="margin-bottom:.6rem">
+    <div class="form-row" style="margin-bottom:.5rem">
+      <div class="form-group" style="max-width:160px"><label>Team committing</label><select id="pen-team-${g.id}">${teamOptions(g)}</select></div>
+      <div class="form-group"><label>Player</label>
+        <select id="pen-player-sel-${g.id}">${playerOptions(allPlayers,'— pick —')}</select>
+        <input id="pen-player-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
-      <div class="form-group" style="margin-bottom:.5rem">
-        <label>Duration</label>
-        <div class="dur-btns">
-          ${durations.map(d=>`<button class="dur-btn${selDur===d?' active':''}" data-dur-game="${g.id}" data-dur="${d}" onclick="selectDur('${g.id}','${d}')">${d}</button>`).join('')}
-          <input id="pen-dur-custom-${g.id}" placeholder="Custom (e.g. 4 min)" style="width:130px;flex:none">
-        </div>
+      <div class="form-group"><label>Penalty type</label><input id="pen-type-${g.id}" placeholder="e.g. Slashing, Tripping"></div>
+      <div class="form-group" style="max-width:110px">
+        <label>Game time</label>
+        <input class="time-manual" id="pen-time-${g.id}" placeholder="e.g. 08:15">
+        <div class="time-hint">mm:ss or mm (blank = clock)</div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="addPenalty('${g.id}')">+ Record penalty</button>
-    </div>`;
+    </div>
+    <div class="form-group" style="margin-bottom:.5rem">
+      <label>Duration</label>
+      <div class="dur-btns">
+        ${durations.map(d=>`<button class="dur-btn${selDur===d?' active':''}" data-dur-game="${g.id}" data-dur="${d}" onclick="selectDur('${g.id}','${d}')">${d}</button>`).join('')}
+        <input id="pen-dur-custom-${g.id}" placeholder="Custom (e.g. 4 min)" style="width:140px;flex:none">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="addPenalty('${g.id}')">+ Record penalty</button>
+  </div>`;
 }
 
 function eventLogHTML(g){
   const events=(g.events||[]).slice().sort((a,b)=>a.time-b.time);
   if(!events.length) return '<div class="empty">No events recorded yet.</div>';
   return events.map(ev=>{
+    const tLabel=ev.timeLabel||fmtTime(ev.time);
     if(ev.type==='goal'){
       const assists=[ev.a1,ev.a2].filter(Boolean).join(', ');
       return `<div class="event-item goal">
@@ -635,7 +694,7 @@ function eventLogHTML(g){
           <div class="event-main">${ev.scorer} <span style="font-size:11px;font-weight:400;color:var(--goal-text)">${ev.team}</span></div>
           ${assists?'<div class="event-detail">Assists: '+assists+'</div>':''}
         </div>
-        <span class="event-time">${fmtTime(ev.time)}</span>
+        <span class="event-time">${tLabel}</span>
         <span class="event-rm" onclick="removeEvent('${g.id}','${ev.id}')" title="Remove">×</span>
       </div>`;
     } else {
@@ -645,11 +704,121 @@ function eventLogHTML(g){
           <div class="event-main">${ev.player} <span style="font-size:11px;font-weight:400;color:var(--penalty-text)">${ev.team}</span></div>
           <div class="event-detail">${[ev.penType,ev.dur?ev.dur+' penalty':''].filter(Boolean).join(' · ')}</div>
         </div>
-        <span class="event-time">${fmtTime(ev.time)}</span>
+        <span class="event-time">${tLabel}</span>
         <span class="event-rm" onclick="removeEvent('${g.id}','${ev.id}')" title="Remove">×</span>
       </div>`;
     }
   }).join('');
+}
+
+// ---- STATISTICS ----
+function updateStatsTeamFilter(){
+  const divFilter=document.getElementById('stats-div-filter')?.value||'all';
+  const sel=document.getElementById('stats-team-filter'); if(!sel) return;
+  const cur=sel.value;
+  const divs=divFilter==='all'?['men','women','youth']:[divFilter];
+  const allTeams=divs.flatMap(d=>(state.teams[d]||[]).map(t=>t.name));
+  sel.innerHTML='<option value="all">All teams</option>'+[...new Set(allTeams)].map(n=>`<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+}
+
+window.renderStats=function(){
+  updateStatsTeamFilter();
+  const divFilter=document.getElementById('stats-div-filter').value;
+  const teamFilter=document.getElementById('stats-team-filter').value;
+
+  // Gather all events from filtered games
+  const filteredGames=state.games.filter(g=>{
+    if(divFilter!=='all' && g.division!==divFilter) return false;
+    if(teamFilter!=='all' && g.homeTeam!==teamFilter && g.awayTeam!==teamFilter) return false;
+    return true;
+  });
+
+  // Build a name->jersey lookup from all teams
+  const jerseyMap={};
+  ['men','women','youth'].forEach(d=>(state.teams[d]||[]).forEach(t=>normPlayers(t.players).forEach(p=>{ if(p.number!=='') jerseyMap[p.name]=p.number; })));
+  function playerDisplayName(name){ return jerseyMap[name]?'#'+jerseyMap[name]+' '+name:name; }
+
+  // Aggregate per player
+  const players={}; // name -> {goals, assists, points, penalties, penMins}
+  function getP(name){ if(!name) return null; if(!players[name]) players[name]={goals:0,assists:0,points:0,penalties:0,penMins:0}; return players[name]; }
+
+  filteredGames.forEach(g=>{
+    (g.events||[]).forEach(ev=>{
+      if(ev.type==='goal'){
+        const sp=getP(ev.scorer); if(sp){ sp.goals++; sp.points++; }
+        if(ev.a1){ const ap=getP(ev.a1); ap.assists++; ap.points++; }
+        if(ev.a2){ const ap=getP(ev.a2); ap.assists++; ap.points++; }
+      } else if(ev.type==='penalty'){
+        const pp=getP(ev.player); if(pp){ pp.penalties++; pp.penMins+=parsePenMins(ev.dur); }
+      }
+    });
+  });
+
+  const sorted=(cat,key)=>Object.entries(players).filter(([,v])=>v[key]>0).sort((a,b)=>b[1][key]-a[1][key]);
+  const rankIcon=(i)=>i===0?'gold':i===1?'silver':i===2?'bronze':'';
+
+  function tableHTML(rows, cols){
+    if(!rows.length) return '<div class="empty">No data yet.</div>';
+    return `<table class="stats-table">
+      <thead><tr>${cols.map(c=>`<th class="${c.num?'num':''}">${c.label}</th>`).join('')}</tr></thead>
+      <tbody>${rows.slice(0,20).map(([name,v],i)=>`<tr>
+        <td><span class="rank-num ${rankIcon(i)}">${i+1}</span></td>
+        <td>${playerDisplayName(name)}</td>
+        ${cols.slice(2).map(c=>`<td class="num">${v[c.key]}</td>`).join('')}
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  const el=document.getElementById('stats-content');
+
+  const goalRows=sorted('goals','goals');
+  const assistRows=sorted('assists','assists');
+  const pointRows=Object.entries(players).filter(([,v])=>v.points>0).sort((a,b)=>b[1].points-a[1].points);
+  const penRows=sorted('penalties','penalties');
+  const penMinRows=Object.entries(players).filter(([,v])=>v.penMins>0).sort((a,b)=>b[1].penMins-a[1].penMins);
+
+  const gamesPlayed=filteredGames.length;
+  const totalGoals=filteredGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='goal').length),0);
+  const totalPens=filteredGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').length),0);
+  const totalPenMins=filteredGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').reduce((a,e)=>a+parsePenMins(e.dur),0)),0);
+
+  el.innerHTML=`
+    <div class="stat-bar" style="margin-bottom:1.25rem">
+      <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${gamesPlayed}</div></div>
+      <div class="stat-card"><div class="stat-label">Goals</div><div class="stat-value" style="color:var(--goal-text)">${totalGoals}</div></div>
+      <div class="stat-card"><div class="stat-label">Penalties</div><div class="stat-value" style="color:var(--penalty-text)">${totalPens}</div></div>
+      <div class="stat-card"><div class="stat-label">Pen. min</div><div class="stat-value" style="color:var(--penalty-text)">${totalPenMins.toFixed(1)}</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem">
+      <div class="card">
+        <div class="card-title">🥍 Top scorers</div>
+        ${tableHTML(goalRows,[{label:'#'},{label:'Player'},{label:'G',num:true,key:'goals'}])}
+      </div>
+      <div class="card">
+        <div class="card-title">🤝 Top assists</div>
+        ${tableHTML(assistRows,[{label:'#'},{label:'Player'},{label:'A',num:true,key:'assists'}])}
+      </div>
+      <div class="card">
+        <div class="card-title">⭐ Top points (G+A)</div>
+        ${tableHTML(pointRows,[{label:'#'},{label:'Player'},{label:'Pts',num:true,key:'points'}])}
+      </div>
+      <div class="card">
+        <div class="card-title">🟨 Most penalties</div>
+        ${tableHTML(penRows,[{label:'#'},{label:'Player'},{label:'PIM count',num:true,key:'penalties'}])}
+      </div>
+      <div class="card">
+        <div class="card-title">⏱ Penalty minutes</div>
+        ${tableHTML(penMinRows,[{label:'#'},{label:'Player'},{label:'PIM',num:true,key:'penMins'}])}
+      </div>
+    </div>`;
+};
+
+function parsePenMins(dur){
+  if(!dur) return 0;
+  const s=dur.toString().toLowerCase();
+  if(s.includes('s')){ return parseFloat(s)/60||0; }
+  return parseFloat(s)||0;
 }
 
 function startTimer(id){
@@ -671,7 +840,7 @@ function sideHTML(g,side,compact){
   const score=side==='home'?g.homeScore:g.awayScore;
   const teamName=side==='home'?g.homeTeam:g.awayTeam;
   const teamObj=(state.teams[g.division]||[]).find(t=>t.name===teamName);
-  const pc=teamObj?teamObj.players.length:null;
+  const pc=teamObj?normPlayers(teamObj.players).length:null;
   const pre=compact?'ov-score-':'score-';
   return `<div class="team-side">
     <div class="team-name-main">${teamName}</div>
@@ -684,7 +853,7 @@ function sideHTML(g,side,compact){
   </div>`;
 }
 
-function gameCardHTML(g, compact){
+function gameCardHTML(g,compact){
   const elapsed=g.status==='live'&&g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
   const refChips=(g.refs||[]).map(r=>'<span class="info-chip">🟡 '+r+'</span>').join('');
   const benchChips=(g.bench||[]).map(b=>'<span class="info-chip">📋 '+b+'</span>').join('');
@@ -696,9 +865,9 @@ function gameCardHTML(g, compact){
     <hr>
     <div class="game-subtabs">
       <button class="game-subtab active" id="stab-${g.id}-score" onclick="switchSubTab('${g.id}','score')">Score</button>
-      <button class="game-subtab" id="stab-${g.id}-goal" onclick="switchSubTab('${g.id}','goal')">⚽ Goals</button>
+      <button class="game-subtab" id="stab-${g.id}-goal" onclick="switchSubTab('${g.id}','goal')">🥍 Goals</button>
       <button class="game-subtab" id="stab-${g.id}-penalty" onclick="switchSubTab('${g.id}','penalty')">🟨 Penalties</button>
-      <button class="game-subtab" id="stab-${g.id}-log" onclick="switchSubTab('${g.id}','log')">📜 Log ${evCount?'('+evCount+')':''}</button>
+      <button class="game-subtab" id="stab-${g.id}-log" onclick="switchSubTab('${g.id}','log')">📜 Log${evCount?' ('+evCount+')':''}</button>
     </div>
     <div id="sp-${g.id}-score" class="subpanel active">
       <div class="section-label">Referees</div>
@@ -715,18 +884,17 @@ function gameCardHTML(g, compact){
     </div>
     <div id="sp-${g.id}-goal" class="subpanel">${goalFormHTML(g)}</div>
     <div id="sp-${g.id}-penalty" class="subpanel">${penaltyFormHTML(g)}</div>
-    <div id="sp-${g.id}-log" class="subpanel">
-      <div class="event-log">${eventLogHTML(g)}</div>
-    </div>`);
+    <div id="sp-${g.id}-log" class="subpanel"><div class="event-log">${eventLogHTML(g)}</div></div>`);
 
-  // compact overview: show recent events
-  const recentEvents = compact && (g.events||[]).length ? `
+  const recentEvents=compact&&evCount?`
     <div class="event-log" style="margin-top:.5rem">
-      ${(g.events||[]).slice().sort((a,b)=>b.time-a.time).slice(0,3).map(ev=>ev.type==='goal'
-        ?`<div class="event-item goal"><span class="event-icon">🥍</span><div class="event-body"><div class="event-main">${ev.scorer} <span style="font-size:11px;font-weight:400">${ev.team}</span></div></div><span class="event-time">${fmtTime(ev.time)}</span></div>`
-        :`<div class="event-item penalty"><span class="event-icon">🟨</span><div class="event-body"><div class="event-main">${ev.player} <span style="font-size:11px;font-weight:400">${ev.team}</span></div><div class="event-detail">${ev.penType||''}</div></div><span class="event-time">${fmtTime(ev.time)}</span></div>`
-      ).join('')}
-    </div>` : '';
+      ${(g.events||[]).slice().sort((a,b)=>b.time-a.time).slice(0,3).map(ev=>{
+        const tLabel=ev.timeLabel||fmtTime(ev.time);
+        return ev.type==='goal'
+          ?`<div class="event-item goal"><span class="event-icon">🥍</span><div class="event-body"><div class="event-main">${ev.scorer} <span style="font-size:11px;font-weight:400">${ev.team}</span></div></div><span class="event-time">${tLabel}</span></div>`
+          :`<div class="event-item penalty"><span class="event-icon">🟨</span><div class="event-body"><div class="event-main">${ev.player} <span style="font-size:11px;font-weight:400">${ev.team}</span></div><div class="event-detail">${ev.penType||''}</div></div><span class="event-time">${tLabel}</span></div>`;
+      }).join('')}
+    </div>`:'';
 
   return `<div class="game-card status-${g.status}" id="${compact?'ov-':''}game-${g.id}">
     <div class="game-header">
@@ -749,10 +917,7 @@ function renderAllGames(){
   if(!state.games.length){ el.innerHTML='<div class="empty card" style="text-align:center;padding:2rem">No games yet — click "+ Add game" above.</div>'; return; }
   const sorted=[...state.games].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   el.innerHTML=sorted.map(g=>gameCardHTML(g,false)).join('');
-  state.games.forEach(g=>{
-    if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id);
-    renderAssignPanels(g.id);
-  });
+  state.games.forEach(g=>{ if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id); renderAssignPanels(g.id); });
 }
 
 function renderAssignPanels(id){
@@ -773,7 +938,7 @@ function renderOverview(){
   const live=state.games.filter(g=>g.status==='live').length;
   const done=state.games.filter(g=>g.status==='finished').length;
   const totalTeams=['men','women','youth'].reduce((s,d)=>s+(state.teams[d]||[]).length,0);
-  const totalPlayers=['men','women','youth'].reduce((s,d)=>s+(state.teams[d]||[]).reduce((a,t)=>a+t.players.length,0),0);
+  const totalPlayers=['men','women','youth'].reduce((s,d)=>s+(state.teams[d]||[]).reduce((a,t)=>a+normPlayers(t.players).length,0),0);
   document.getElementById('stat-bar').innerHTML=`
     <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${state.games.length}</div></div>
     <div class="stat-card"><div class="stat-label">Live</div><div class="stat-value" style="color:#dc2626">${live}</div></div>
