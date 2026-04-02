@@ -624,10 +624,16 @@ window.removeEvent=function(gameId,eventId){
 };
 
 function goalFormHTML(g){
-  const {allPlayers}=getGamePlayers(g);
+  const {homePlayers,awayPlayers}=getGamePlayers(g);
+  const initPlayers=homePlayers; // home team selected by default
   return `<div style="margin-bottom:.6rem">
     <div class="form-row" style="margin-bottom:.5rem">
-      <div class="form-group" style="max-width:160px"><label>Scoring team</label><select id="goal-team-${g.id}">${teamOptions(g)}</select></div>
+      <div class="form-group" style="max-width:160px"><label>Scoring team</label>
+        <select id="goal-team-${g.id}" onchange="refreshGoalPlayers('${g.id}')">
+          <option value="${g.homeTeam}">${g.homeTeam}</option>
+          <option value="${g.awayTeam}">${g.awayTeam}</option>
+        </select>
+      </div>
       <div class="form-group" style="max-width:110px">
         <label>Game time</label>
         <input class="time-manual" id="goal-time-${g.id}" placeholder="e.g. 12:34">
@@ -636,15 +642,15 @@ function goalFormHTML(g){
     </div>
     <div class="form-row">
       <div class="form-group"><label>Scorer</label>
-        <select id="goal-scorer-sel-${g.id}">${playerOptions(allPlayers,'— pick —')}</select>
+        <select id="goal-scorer-sel-${g.id}">${playerOptions(initPlayers,'— pick —')}</select>
         <input id="goal-scorer-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
       <div class="form-group"><label>1st assist</label>
-        <select id="goal-a1-sel-${g.id}">${playerOptions(allPlayers,'— none —')}</select>
+        <select id="goal-a1-sel-${g.id}">${playerOptions(initPlayers,'— none —')}</select>
         <input id="goal-a1-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
       <div class="form-group"><label>2nd assist</label>
-        <select id="goal-a2-sel-${g.id}">${playerOptions(allPlayers,'— none —')}</select>
+        <select id="goal-a2-sel-${g.id}">${playerOptions(initPlayers,'— none —')}</select>
         <input id="goal-a2-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
     </div>
@@ -652,15 +658,34 @@ function goalFormHTML(g){
   </div>`;
 }
 
+window.refreshGoalPlayers=function(gameId){
+  const g=state.games.find(g=>g.id===gameId); if(!g) return;
+  const team=document.getElementById('goal-team-'+gameId).value;
+  const {homePlayers,awayPlayers}=getGamePlayers(g);
+  const players=team===g.homeTeam?homePlayers:awayPlayers;
+  ['goal-scorer-sel-','goal-a1-sel-','goal-a2-sel-'].forEach((pre,i)=>{
+    const sel=document.getElementById(pre+gameId); if(!sel) return;
+    const blank=i===0?'— pick —':'— none —';
+    sel.innerHTML=playerOptions(players,blank);
+  });
+  // clear typed inputs too
+  ['goal-scorer-','goal-a1-','goal-a2-'].forEach(pre=>{ const el=document.getElementById(pre+gameId); if(el) el.value=''; });
+};
+
 function penaltyFormHTML(g){
-  const {allPlayers}=getGamePlayers(g);
+  const {homePlayers}=getGamePlayers(g);
   const selDur=penaltyDur[g.id]||'';
   const durations=['30s','1 min','2 min','3 min','5 min'];
   return `<div style="margin-bottom:.6rem">
     <div class="form-row" style="margin-bottom:.5rem">
-      <div class="form-group" style="max-width:160px"><label>Team committing</label><select id="pen-team-${g.id}">${teamOptions(g)}</select></div>
+      <div class="form-group" style="max-width:160px"><label>Team committing</label>
+        <select id="pen-team-${g.id}" onchange="refreshPenaltyPlayers('${g.id}')">
+          <option value="${g.homeTeam}">${g.homeTeam}</option>
+          <option value="${g.awayTeam}">${g.awayTeam}</option>
+        </select>
+      </div>
       <div class="form-group"><label>Player</label>
-        <select id="pen-player-sel-${g.id}">${playerOptions(allPlayers,'— pick —')}</select>
+        <select id="pen-player-sel-${g.id}">${playerOptions(homePlayers,'— pick —')}</select>
         <input id="pen-player-${g.id}" placeholder="or type name" style="margin-top:4px">
       </div>
       <div class="form-group"><label>Penalty type</label><input id="pen-type-${g.id}" placeholder="e.g. Slashing, Tripping"></div>
@@ -680,6 +705,17 @@ function penaltyFormHTML(g){
     <button class="btn btn-primary btn-sm" onclick="addPenalty('${g.id}')">+ Record penalty</button>
   </div>`;
 }
+
+window.refreshPenaltyPlayers=function(gameId){
+  const g=state.games.find(g=>g.id===gameId); if(!g) return;
+  const team=document.getElementById('pen-team-'+gameId).value;
+  const {homePlayers,awayPlayers}=getGamePlayers(g);
+  const players=team===g.homeTeam?homePlayers:awayPlayers;
+  const sel=document.getElementById('pen-player-sel-'+gameId);
+  if(sel) sel.innerHTML=playerOptions(players,'— pick —');
+  const inp=document.getElementById('pen-player-'+gameId);
+  if(inp) inp.value='';
+};
 
 function eventLogHTML(g){
   const events=(g.events||[]).slice().sort((a,b)=>a.time-b.time);
