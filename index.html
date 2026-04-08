@@ -451,11 +451,37 @@ window.removePlayer=function(div,teamId,name){
   const team=state.teams[div].find(t=>t.id===teamId);
   if(team){ team.players=normPlayers(team.players).filter(p=>p.name!==name); renderTeams(div); scheduleSave(); }
 };
+window.updatePlayerNumber=function(div,teamId,playerName,newNum){
+  const team=state.teams[div].find(t=>t.id===teamId); if(!team) return;
+  const p=normPlayers(team.players).find(p=>p.name===playerName); if(!p) return;
+  p.number=newNum.trim();
+  team.players=sortPlayers(team.players);
+  scheduleSave();
+  // re-render all places that show player names/numbers
+  renderTeams(div);
+  renderAllGames();
+  renderOverview();
+};
+
 function renderTeams(div){
   const el=document.getElementById('teams-'+div), teams=state.teams[div]||[];
   if(!teams.length){ el.innerHTML='<div class="empty" style="padding:.5rem 0">No teams yet.</div>'; return; }
   el.innerHTML=teams.map(team=>{
     const sorted=sortPlayers(team.players);
+    const playerRows=sorted.length ? sorted.map(p=>`
+      <div class="player-chip" style="gap:6px">
+        <input
+          type="number" min="0" max="999"
+          value="${esc(p.number)}"
+          placeholder="#"
+          title="Jersey number"
+          style="width:52px;padding:2px 5px;font-size:12px;font-weight:700;text-align:center;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);-moz-appearance:textfield"
+          onchange="updatePlayerNumber('${div}','${team.id}','${esc(p.name)}',this.value)"
+          onkeydown="if(event.key==='Enter'){this.blur()}"
+        >
+        <span style="font-size:13px">${p.name}</span>
+        <span class="chip-rm" onclick="removePlayer('${div}','${team.id}','${esc(p.name)}')">×</span>
+      </div>`).join('') : '<div class="empty">No players yet.</div>';
     return `
     <div class="team-block">
       <div class="team-block-header">
@@ -469,9 +495,7 @@ function renderTeams(div){
         <div class="form-group"><label style="font-size:11px;color:var(--text-hint)">Name</label><input id="player-inp-${team.id}" placeholder="Player name" onkeydown="if(event.key==='Enter')addPlayer('${div}','${team.id}')"></div>
         <button class="btn btn-primary btn-sm" style="margin-bottom:1px" onclick="addPlayer('${div}','${team.id}')">Add</button>
       </div>
-      <div class="player-list">
-        ${sorted.length ? sorted.map(p=>`<div class="player-chip">${p.number!==''?'<span style="font-size:11px;font-weight:700;color:var(--text-hint);min-width:18px">#'+p.number+'</span>':''}<span>${p.name}</span><span class="chip-rm" onclick="removePlayer('${div}','${team.id}','${esc(p.name)}')">×</span></div>`).join('') : '<div class="empty">No players yet.</div>'}
-      </div>
+      <div class="player-list">${playerRows}</div>
     </div>`;
   }).join('');
 }
