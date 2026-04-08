@@ -451,13 +451,32 @@ window.removePlayer=function(div,teamId,name){
   const team=state.teams[div].find(t=>t.id===teamId);
   if(team){ team.players=normPlayers(team.players).filter(p=>p.name!==name); renderTeams(div); scheduleSave(); }
 };
+window.updateTeamName=function(div,teamId,newName){
+  newName=newName.trim(); if(!newName) return;
+  const team=state.teams[div].find(t=>t.id===teamId); if(!team) return;
+  const oldName=team.name;
+  if(oldName===newName) return;
+  if(state.teams[div].find(t=>t.id!==teamId && t.name.toLowerCase()===newName.toLowerCase())){ showToast('Team name already exists',true); renderTeams(div); return; }
+  team.name=newName;
+  // update any games that reference the old name
+  state.games.forEach(g=>{
+    if(g.division===div){
+      if(g.homeTeam===oldName) g.homeTeam=newName;
+      if(g.awayTeam===oldName) g.awayTeam=newName;
+      (g.events||[]).forEach(ev=>{ if(ev.team===oldName) ev.team=newName; });
+    }
+  });
+  scheduleSave();
+  renderTeams(div); updateTeamDropdowns(); renderAllGames(); renderOverview(); updateStatsTeamFilter();
+  showToast('Team name updated');
+};
+
 window.updatePlayerNumber=function(div,teamId,playerName,newNum){
   const team=state.teams[div].find(t=>t.id===teamId); if(!team) return;
   const p=normPlayers(team.players).find(p=>p.name===playerName); if(!p) return;
   p.number=newNum.trim();
   team.players=sortPlayers(team.players);
   scheduleSave();
-  // re-render all places that show player names/numbers
   renderTeams(div);
   renderAllGames();
   renderOverview();
@@ -485,7 +504,15 @@ function renderTeams(div){
     return `
     <div class="team-block">
       <div class="team-block-header">
-        <div class="team-block-name"><span class="badge badge-${div}">${cap(div)}</span>${team.name}
+        <div class="team-block-name"><span class="badge badge-${div}">${cap(div)}</span>
+          <input
+            value="${esc(team.name)}"
+            style="font-size:15px;font-weight:600;border:none;background:transparent;color:var(--text);padding:0;outline:none;border-bottom:1.5px solid transparent;transition:border-color .15s;min-width:80px;width:auto"
+            onfocus="this.style.borderBottomColor='var(--green)'"
+            onblur="this.style.borderBottomColor='transparent';updateTeamName('${div}','${team.id}',this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()"
+            title="Click to edit team name"
+          >
           <span style="font-size:12px;color:var(--text-hint);font-weight:400">${sorted.length} player${sorted.length!==1?'s':''}</span>
         </div>
         <button class="btn btn-sm btn-danger" onclick="removeTeam('${div}','${team.id}')">Remove team</button>
@@ -786,92 +813,109 @@ window.renderStats=function(){
   const divFilter=document.getElementById('stats-div-filter').value;
   const teamFilter=document.getElementById('stats-team-filter').value;
 
-  // Gather all events from filtered games
-  const filteredGames=state.games.filter(g=>{
-    if(divFilter!=='all' && g.division!==divFilter) return false;
-    if(teamFilter!=='all' && g.homeTeam!==teamFilter && g.awayTeam!==teamFilter) return false;
-    return true;
-  });
-
-  // Build a name->jersey lookup from all teams
+  // Build jersey map
   const jerseyMap={};
   ['men','women','youth'].forEach(d=>(state.teams[d]||[]).forEach(t=>normPlayers(t.players).forEach(p=>{ if(p.number!=='') jerseyMap[p.name]=p.number; })));
   function playerDisplayName(name){ return jerseyMap[name]?'#'+jerseyMap[name]+' '+name:name; }
 
-  // Aggregate per player
-  const players={}; // name -> {goals, assists, points, penalties, penMins}
-  function getP(name){ if(!name) return null; if(!players[name]) players[name]={goals:0,assists:0,points:0,penalties:0,penMins:0}; return players[name]; }
-
-  filteredGames.forEach(g=>{
-    (g.events||[]).forEach(ev=>{
-      if(ev.type==='goal'){
-        const sp=getP(ev.scorer); if(sp){ sp.goals++; sp.points++; }
-        if(ev.a1){ const ap=getP(ev.a1); ap.assists++; ap.points++; }
-        if(ev.a2){ const ap=getP(ev.a2); ap.assists++; ap.points++; }
-      } else if(ev.type==='penalty'){
-        const pp=getP(ev.player); if(pp){ pp.penalties++; pp.penMins+=parsePenMins(ev.dur); }
-      }
-    });
-  });
-
-  const sorted=(cat,key)=>Object.entries(players).filter(([,v])=>v[key]>0).sort((a,b)=>b[1][key]-a[1][key]);
   const rankIcon=(i)=>i===0?'gold':i===1?'silver':i===2?'bronze':'';
 
-  function tableHTML(rows, cols){
+  function tableHTML(rows,cols){
     if(!rows.length) return '<div class="empty">No data yet.</div>';
     return `<table class="stats-table">
       <thead><tr>${cols.map(c=>`<th class="${c.num?'num':''}">${c.label}</th>`).join('')}</tr></thead>
       <tbody>${rows.slice(0,20).map(([name,v],i)=>`<tr>
         <td><span class="rank-num ${rankIcon(i)}">${i+1}</span></td>
         <td>${playerDisplayName(name)}</td>
-        ${cols.slice(2).map(c=>`<td class="num">${v[c.key]}</td>`).join('')}
+        ${cols.slice(2).map(c=>`<td class="num">${typeof v[c.key]==='number'&&!Number.isInteger(v[c.key])?v[c.key].toFixed(1):v[c.key]}</td>`).join('')}
       </tr>`).join('')}</tbody>
     </table>`;
   }
 
+  function aggregateGames(games){
+    const players={};
+    function getP(name){ if(!name) return null; if(!players[name]) players[name]={goals:0,assists:0,points:0,penalties:0,penMins:0}; return players[name]; }
+    games.forEach(g=>{
+      (g.events||[]).forEach(ev=>{
+        if(ev.type==='goal'){
+          const sp=getP(ev.scorer); if(sp){ sp.goals++; sp.points++; }
+          if(ev.a1){ const ap=getP(ev.a1); ap.assists++; ap.points++; }
+          if(ev.a2){ const ap=getP(ev.a2); ap.assists++; ap.points++; }
+        } else if(ev.type==='penalty'){
+          const pp=getP(ev.player); if(pp){ pp.penalties++; pp.penMins+=parsePenMins(ev.dur); }
+        }
+      });
+    });
+    return players;
+  }
+
+  function sectionHTML(label, badge, games){
+    if(!games.length) return '';
+    const players=aggregateGames(games);
+    const sorted=(key)=>Object.entries(players).filter(([,v])=>v[key]>0).sort((a,b)=>b[1][key]-a[1][key]);
+    const pointRows=Object.entries(players).filter(([,v])=>v.points>0).sort((a,b)=>b[1].points-a[1].points);
+    const penMinRows=Object.entries(players).filter(([,v])=>v.penMins>0).sort((a,b)=>b[1].penMins-a[1].penMins);
+    const totalGoals=games.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='goal').length),0);
+    const totalPens=games.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').length),0);
+    const totalPenMins=games.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').reduce((a,e)=>a+parsePenMins(e.dur),0)),0);
+    return `
+      <div style="margin-bottom:2rem">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:2px solid var(--border)">
+          <span style="font-size:16px;font-weight:700">${label}</span>${badge}
+        </div>
+        <div class="stat-bar" style="margin-bottom:1rem">
+          <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${games.length}</div></div>
+          <div class="stat-card"><div class="stat-label">Goals</div><div class="stat-value" style="color:var(--goal-text)">${totalGoals}</div></div>
+          <div class="stat-card"><div class="stat-label">Penalties</div><div class="stat-value" style="color:var(--penalty-text)">${totalPens}</div></div>
+          <div class="stat-card"><div class="stat-label">Pen. min</div><div class="stat-value" style="color:var(--penalty-text)">${totalPenMins.toFixed(1)}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.75rem">
+          <div class="card"><div class="card-title">🥍 Top scorers</div>${tableHTML(sorted('goals'),[{label:'#'},{label:'Player'},{label:'G',num:true,key:'goals'}])}</div>
+          <div class="card"><div class="card-title">🤝 Top assists</div>${tableHTML(sorted('assists'),[{label:'#'},{label:'Player'},{label:'A',num:true,key:'assists'}])}</div>
+          <div class="card"><div class="card-title">⭐ Points (G+A)</div>${tableHTML(pointRows,[{label:'#'},{label:'Player'},{label:'Pts',num:true,key:'points'}])}</div>
+          <div class="card"><div class="card-title">🟨 Most penalties</div>${tableHTML(sorted('penalties'),[{label:'#'},{label:'Player'},{label:'#',num:true,key:'penalties'}])}</div>
+          <div class="card"><div class="card-title">⏱ Penalty minutes</div>${tableHTML(penMinRows,[{label:'#'},{label:'Player'},{label:'PIM',num:true,key:'penMins'}])}</div>
+        </div>
+      </div>`;
+  }
+
+  const filterGames=(div)=>state.games.filter(g=>{
+    if(g.division!==div) return false;
+    if(teamFilter!=='all' && g.homeTeam!==teamFilter && g.awayTeam!==teamFilter) return false;
+    return true;
+  });
+
   const el=document.getElementById('stats-content');
 
-  const goalRows=sorted('goals','goals');
-  const assistRows=sorted('assists','assists');
-  const pointRows=Object.entries(players).filter(([,v])=>v.points>0).sort((a,b)=>b[1].points-a[1].points);
-  const penRows=sorted('penalties','penalties');
-  const penMinRows=Object.entries(players).filter(([,v])=>v.penMins>0).sort((a,b)=>b[1].penMins-a[1].penMins);
-
-  const gamesPlayed=filteredGames.length;
-  const totalGoals=filteredGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='goal').length),0);
-  const totalPens=filteredGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').length),0);
-  const totalPenMins=filteredGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').reduce((a,e)=>a+parsePenMins(e.dur),0)),0);
-
-  el.innerHTML=`
-    <div class="stat-bar" style="margin-bottom:1.25rem">
-      <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${gamesPlayed}</div></div>
-      <div class="stat-card"><div class="stat-label">Goals</div><div class="stat-value" style="color:var(--goal-text)">${totalGoals}</div></div>
-      <div class="stat-card"><div class="stat-label">Penalties</div><div class="stat-value" style="color:var(--penalty-text)">${totalPens}</div></div>
-      <div class="stat-card"><div class="stat-label">Pen. min</div><div class="stat-value" style="color:var(--penalty-text)">${totalPenMins.toFixed(1)}</div></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem">
-      <div class="card">
-        <div class="card-title">🥍 Top scorers</div>
-        ${tableHTML(goalRows,[{label:'#'},{label:'Player'},{label:'G',num:true,key:'goals'}])}
+  if(divFilter==='all'){
+    // Show all three divisions as separate sections
+    const menGames=filterGames('men');
+    const womenGames=filterGames('women');
+    const youthGames=filterGames('youth');
+    const allGames=[...menGames,...womenGames,...youthGames];
+    // combined summary bar at top
+    const totalGoals=allGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='goal').length),0);
+    const totalPens=allGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').length),0);
+    const totalPenMins=allGames.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').reduce((a,e)=>a+parsePenMins(e.dur),0)),0);
+    el.innerHTML=`
+      <div class="stat-bar" style="margin-bottom:1.5rem">
+        <div class="stat-card"><div class="stat-label">All games</div><div class="stat-value">${allGames.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Goals</div><div class="stat-value" style="color:var(--goal-text)">${totalGoals}</div></div>
+        <div class="stat-card"><div class="stat-label">Penalties</div><div class="stat-value" style="color:var(--penalty-text)">${totalPens}</div></div>
+        <div class="stat-card"><div class="stat-label">Pen. min</div><div class="stat-value" style="color:var(--penalty-text)">${totalPenMins.toFixed(1)}</div></div>
       </div>
-      <div class="card">
-        <div class="card-title">🤝 Top assists</div>
-        ${tableHTML(assistRows,[{label:'#'},{label:'Player'},{label:'A',num:true,key:'assists'}])}
-      </div>
-      <div class="card">
-        <div class="card-title">⭐ Top points (G+A)</div>
-        ${tableHTML(pointRows,[{label:'#'},{label:'Player'},{label:'Pts',num:true,key:'points'}])}
-      </div>
-      <div class="card">
-        <div class="card-title">🟨 Most penalties</div>
-        ${tableHTML(penRows,[{label:'#'},{label:'Player'},{label:'PIM count',num:true,key:'penalties'}])}
-      </div>
-      <div class="card">
-        <div class="card-title">⏱ Penalty minutes</div>
-        ${tableHTML(penMinRows,[{label:'#'},{label:'Player'},{label:'PIM',num:true,key:'penMins'}])}
-      </div>
-    </div>`;
+      ${sectionHTML('Men','<span class="badge badge-men">Men</span>',menGames)}
+      ${sectionHTML('Women','<span class="badge badge-women">Women</span>',womenGames)}
+      ${sectionHTML('Youth','<span class="badge badge-youth">Youth</span>',youthGames)}
+    `;
+  } else {
+    const games=filterGames(divFilter);
+    const badgeMap={men:'<span class="badge badge-men">Men</span>',women:'<span class="badge badge-women">Women</span>',youth:'<span class="badge badge-youth">Youth</span>'};
+    const labelMap={men:'Men',women:'Women',youth:'Youth'};
+    el.innerHTML=games.length
+      ? sectionHTML(labelMap[divFilter],badgeMap[divFilter],games)
+      : '<div class="empty card" style="text-align:center;padding:2rem">No games for this division yet.</div>';
+  }
 };
 
 function parsePenMins(dur){
