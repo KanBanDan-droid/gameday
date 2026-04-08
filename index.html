@@ -197,6 +197,12 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
 
   <!-- OVERVIEW -->
   <div id="tab-overview" class="panel active">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem">
+      <button class="tab active" style="padding:5px 14px;font-size:12px" id="ov-filter-all"    onclick="setOverviewFilter('all')">All games</button>
+      <button class="tab"        style="padding:5px 14px;font-size:12px" id="ov-filter-men"    onclick="setOverviewFilter('men')">Men</button>
+      <button class="tab"        style="padding:5px 14px;font-size:12px" id="ov-filter-women"  onclick="setOverviewFilter('women')">Women</button>
+      <button class="tab"        style="padding:5px 14px;font-size:12px" id="ov-filter-youth"  onclick="setOverviewFilter('youth')">Youth</button>
+    </div>
     <div class="stat-bar" id="stat-bar"></div>
     <div class="overview-grid" id="overview-games"></div>
   </div>
@@ -1038,22 +1044,33 @@ function renderAssignPanels(id){
     : '<span class="empty">Add bench officials in Officials tab first</span>';
 }
 
+let ovFilter='all';
+window.setOverviewFilter=function(f){
+  ovFilter=f;
+  ['all','men','women','youth'].forEach(v=>{
+    const btn=document.getElementById('ov-filter-'+v);
+    if(btn) btn.classList.toggle('active',v===f);
+  });
+  renderOverview();
+};
+
 function renderOverview(){
-  const live=state.games.filter(g=>g.status==='live').length;
-  const done=state.games.filter(g=>g.status==='finished').length;
+  const filtered=ovFilter==='all'?state.games:state.games.filter(g=>g.division===ovFilter);
+  const live=filtered.filter(g=>g.status==='live').length;
+  const done=filtered.filter(g=>g.status==='finished').length;
   const totalTeams=['men','women','youth'].reduce((s,d)=>s+(state.teams[d]||[]).length,0);
   const totalPlayers=['men','women','youth'].reduce((s,d)=>s+(state.teams[d]||[]).reduce((a,t)=>a+normPlayers(t.players).length,0),0);
   document.getElementById('stat-bar').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${state.games.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${filtered.length}</div></div>
     <div class="stat-card"><div class="stat-label">Live</div><div class="stat-value" style="color:#dc2626">${live}</div></div>
     <div class="stat-card"><div class="stat-label">Finished</div><div class="stat-value">${done}</div></div>
     <div class="stat-card"><div class="stat-label">Teams</div><div class="stat-value">${totalTeams}</div></div>
     <div class="stat-card"><div class="stat-label">Players</div><div class="stat-value">${totalPlayers}</div></div>`;
   const el=document.getElementById('overview-games');
-  if(!state.games.length){ el.innerHTML='<div class="empty card" style="text-align:center;padding:2rem">No games scheduled yet.</div>'; return; }
-  const sorted=[...state.games].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  if(!filtered.length){ el.innerHTML='<div class="empty card" style="text-align:center;padding:2rem">No games scheduled yet.</div>'; return; }
+  const sorted=[...filtered].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   el.innerHTML=sorted.map(g=>gameCardHTML(g,true)).join('');
-  state.games.forEach(g=>{ if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id); });
+  filtered.forEach(g=>{ if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id); });
 }
 
 window.addOfficial=function(type){
