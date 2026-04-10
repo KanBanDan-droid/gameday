@@ -1248,7 +1248,12 @@ function gameCardHTML(g,compact){
 function renderAllGames(){
   const el=document.getElementById('games-list');
   if(!state.games.length){ el.innerHTML='<div class="empty card" style="text-align:center;padding:2rem">No games yet — click "+ Add game" above.</div>'; return; }
-  const sorted=[...state.games].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const statusOrder={live:0,scheduled:1,finished:2};
+  const sorted=[...state.games].sort((a,b)=>{
+    const sw=(statusOrder[a.status]??1)-(statusOrder[b.status]??1);
+    if(sw!==0) return sw;
+    return (a.time||'').localeCompare(b.time||'');
+  });
   el.innerHTML=sorted.map(g=>gameCardHTML(g,false)).join('');
   state.games.forEach(g=>{ if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id); renderAssignPanels(g.id); });
 }
