@@ -1127,6 +1127,7 @@ window.adjustStat=function(gameId,field,delta){
   const apEl=document.getElementById('stat-awaySvPct-'+gameId); if(apEl) apEl.textContent=svPct(aSaves,aGoals);
   scheduleSave();
 };
+function gameCardHTML(g,compact){
   const elapsed=g.status==='live'&&g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
   const refChips=(g.refs||[]).map(r=>'<span class="info-chip">🟡 '+r+'</span>').join('');
   const benchChips=(g.bench||[]).map(b=>'<span class="info-chip">📋 '+b+'</span>').join('');
