@@ -189,9 +189,9 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
 
   <div class="tabs">
     <div class="tab active" onclick="switchTab('overview')">📋 Overview</div>
-    <div class="tab" onclick="switchTab('games')">🏟 Games</div>
-    <div class="tab" onclick="switchTab('teams')">👥 Teams</div>
-    <div class="tab" onclick="switchTab('officials')">🦺 Officials</div>
+    <div class="tab" onclick="switchTab('games')">🏟 Games 🔒</div>
+    <div class="tab" onclick="switchTab('teams')">👥 Teams 🔒</div>
+    <div class="tab" onclick="switchTab('officials')">🦺 Officials 🔒</div>
     <div class="tab" onclick="switchTab('stats')">📊 Statistics</div>
   </div>
 
@@ -335,6 +335,21 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
     </div>
     <div id="stats-content"></div>
   </div>
+
+  <!-- PASSWORD MODAL -->
+  <div id="pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem 1.75rem;width:min(320px,90vw);box-shadow:0 8px 32px rgba(0,0,0,.2)">
+      <div style="font-size:2rem;text-align:center;margin-bottom:.5rem">🔒</div>
+      <div style="font-size:15px;font-weight:700;text-align:center;margin-bottom:.35rem">Admin access</div>
+      <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:1.25rem">Enter the password to manage games, teams and officials.</div>
+      <input type="password" id="pw-input" placeholder="Password" style="margin-bottom:.6rem" onkeydown="if(event.key==='Enter')checkPassword()">
+      <div id="pw-error" style="color:#dc2626;font-size:12px;margin-bottom:.6rem;min-height:16px"></div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-primary" style="flex:1" onclick="checkPassword()">Unlock</button>
+        <button class="btn" onclick="closePwModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -402,13 +417,55 @@ function updateMeta(){
 document.getElementById('event-date').addEventListener('change',e=>{ state.date=e.target.value; updateMeta(); scheduleSave(); });
 document.getElementById('event-venue').addEventListener('input',e=>{ state.venue=e.target.value; updateMeta(); scheduleSave(); });
 
+// ---- PASSWORD GATE ----
+const PROTECTED = ['games','teams','officials'];
+const PW_HASH = '8e8aee05ed8f20a1e9c93843a2b7cde0c8d04e6eb1f46d2b2e3d4e5a6b7c8d9e'; // placeholder, set below
+const CORRECT_PW = 'lacrosse2025'; // <-- change this to your desired password
+let adminUnlocked = false;
+let pendingTab = null;
+
 window.switchTab=function(tab){
+  if(PROTECTED.includes(tab) && !adminUnlocked){
+    pendingTab = tab;
+    openPwModal();
+    return;
+  }
   ['overview','games','teams','officials','stats'].forEach((t,i)=>document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='overview') renderOverview();
   if(tab==='games') updateTeamDropdowns();
   if(tab==='stats'){ updateStatsTeamFilter(); renderStats(); }
+};
+
+function openPwModal(){
+  const modal = document.getElementById('pw-modal');
+  modal.style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+  setTimeout(()=>document.getElementById('pw-input').focus(), 50);
+}
+
+window.closePwModal=function(){
+  document.getElementById('pw-modal').style.display = 'none';
+  pendingTab = null;
+};
+
+window.checkPassword=function(){
+  const val = document.getElementById('pw-input').value;
+  if(val === CORRECT_PW){
+    adminUnlocked = true;
+    document.getElementById('pw-modal').style.display = 'none';
+    // remove lock icons from tabs now that we're unlocked
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.textContent = t.textContent.replace(' 🔒','');
+    });
+    if(pendingTab){ window.switchTab(pendingTab); pendingTab=null; }
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password — try again.';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
 };
 
 window.toggleForm=function(id){ const el=document.getElementById(id); el.style.display=el.style.display==='none'?'block':'none'; };
