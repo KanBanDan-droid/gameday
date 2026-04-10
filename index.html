@@ -855,15 +855,75 @@ window.renderStats=function(){
     return players;
   }
 
+  function aggregateGoalies(games){
+    // home goalie faces away team's shots; away goalie faces home team's shots
+    // shots = shotsWide (by attacker) + saves (by goalie) + goals scored
+    // Save% = saves / (saves + goalsAgainst) i.e. saves / shots on target
+    const goalies={};
+    function getG(name){ if(!name||!name.trim()) return null; if(!goalies[name]) goalies[name]={totalShots:0,shotsWide:0,saves:0,goalsAgainst:0,gamesPlayed:0}; return goalies[name]; }
+    games.forEach(g=>{
+      const hG=getG(g.homeGoalie); const aG=getG(g.awayGoalie);
+      // home goalie faces away team's attack
+      if(hG){
+        hG.shotsWide+=g.awayShotsWide||0;
+        hG.saves+=g.awaySaves||0;
+        hG.goalsAgainst+=g.awayScore||0;
+        hG.totalShots+=(g.awayShotsWide||0)+(g.awaySaves||0)+(g.awayScore||0);
+        hG.gamesPlayed++;
+      }
+      // away goalie faces home team's attack
+      if(aG){
+        aG.shotsWide+=g.homeShotsWide||0;
+        aG.saves+=g.homeSaves||0;
+        aG.goalsAgainst+=g.homeScore||0;
+        aG.totalShots+=(g.homeShotsWide||0)+(g.homeSaves||0)+(g.homeScore||0);
+        aG.gamesPlayed++;
+      }
+    });
+    Object.values(goalies).forEach(v=>{
+      const onTarget=v.saves+v.goalsAgainst;
+      v.svPct=onTarget>0?(v.saves/onTarget)*100:null;
+    });
+    return goalies;
+  }
+
+  function goalieTableHTML(goalies){
+    const rows=Object.entries(goalies).filter(([,v])=>v.gamesPlayed>0).sort((a,b)=>(b[1].svPct||0)-(a[1].svPct||0));
+    if(!rows.length) return '<div class="empty">No goalie data yet.</div>';
+    return `<table class="stats-table">
+      <thead><tr>
+        <th></th><th>Goalie</th>
+        <th class="num" title="Games played">GP</th>
+        <th class="num" title="Total shots faced">Shots</th>
+        <th class="num" title="Shots wide">Wide</th>
+        <th class="num" title="Saves">SV</th>
+        <th class="num" title="Goals against">GA</th>
+        <th class="num" title="Save percentage">SV%</th>
+      </tr></thead>
+      <tbody>${rows.map(([name,v],i)=>`<tr>
+        <td><span class="rank-num ${rankIcon(i)}">${i+1}</span></td>
+        <td>${playerDisplayName(name)} <span style="font-size:10px;font-weight:700;background:var(--scheduled-bg);color:var(--scheduled-text);padding:1px 5px;border-radius:3px;margin-left:3px">G</span></td>
+        <td class="num">${v.gamesPlayed}</td>
+        <td class="num">${v.totalShots}</td>
+        <td class="num">${v.shotsWide}</td>
+        <td class="num">${v.saves}</td>
+        <td class="num">${v.goalsAgainst}</td>
+        <td class="num" style="font-weight:700">${v.svPct!==null?v.svPct.toFixed(1)+'%':'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
   function sectionHTML(label, badge, games){
     if(!games.length) return '';
     const players=aggregateGames(games);
+    const goalies=aggregateGoalies(games);
     const sorted=(key)=>Object.entries(players).filter(([,v])=>v[key]>0).sort((a,b)=>b[1][key]-a[1][key]);
     const pointRows=Object.entries(players).filter(([,v])=>v.points>0).sort((a,b)=>b[1].points-a[1].points);
     const penMinRows=Object.entries(players).filter(([,v])=>v.penMins>0).sort((a,b)=>b[1].penMins-a[1].penMins);
     const totalGoals=games.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='goal').length),0);
     const totalPens=games.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').length),0);
     const totalPenMins=games.reduce((s,g)=>(s+(g.events||[]).filter(e=>e.type==='penalty').reduce((a,e)=>a+parsePenMins(e.dur),0)),0);
+    const totalShots=games.reduce((s,g)=>(s+(g.homeShotsWide||0)+(g.homeSaves||0)+(g.homeScore||0)+(g.awayShotsWide||0)+(g.awaySaves||0)+(g.awayScore||0)),0);
     return `
       <div style="margin-bottom:2rem">
         <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:2px solid var(--border)">
@@ -872,8 +932,12 @@ window.renderStats=function(){
         <div class="stat-bar" style="margin-bottom:1rem">
           <div class="stat-card"><div class="stat-label">Games</div><div class="stat-value">${games.length}</div></div>
           <div class="stat-card"><div class="stat-label">Goals</div><div class="stat-value" style="color:var(--goal-text)">${totalGoals}</div></div>
+          <div class="stat-card"><div class="stat-label">Shots</div><div class="stat-value">${totalShots}</div></div>
           <div class="stat-card"><div class="stat-label">Penalties</div><div class="stat-value" style="color:var(--penalty-text)">${totalPens}</div></div>
           <div class="stat-card"><div class="stat-label">Pen. min</div><div class="stat-value" style="color:var(--penalty-text)">${totalPenMins.toFixed(1)}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.75rem;margin-bottom:.75rem">
+          <div class="card" style="grid-column:1/-1"><div class="card-title">🥅 Goalie statistics</div>${goalieTableHTML(goalies)}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.75rem">
           <div class="card"><div class="card-title">🥍 Top scorers</div>${tableHTML(sorted('goals'),[{label:'#'},{label:'Player'},{label:'G',num:true,key:'goals'}])}</div>
@@ -952,9 +1016,12 @@ function sideHTML(g,side,compact){
   const teamObj=(state.teams[g.division]||[]).find(t=>t.name===teamName);
   const pc=teamObj?normPlayers(teamObj.players).length:null;
   const pre=compact?'ov-score-':'score-';
+  const goalie=side==='home'?(g.homeGoalie||''):(g.awayGoalie||'');
+  const goalieLabel=goalie?playerDisplayNameG(goalie):'';
   return `<div class="team-side">
     <div class="team-name-main">${teamName}</div>
-    ${pc!==null?'<div class="team-name-sub">'+pc+' player'+(pc!==1?'s':'')+'</div>':''}
+    ${goalieLabel?'<div class="team-name-sub" style="color:var(--text-muted)">🥅 '+goalieLabel+' <span style="font-size:10px;font-weight:700;background:var(--scheduled-bg);color:var(--scheduled-text);padding:1px 5px;border-radius:3px">G</span></div>':''}
+    ${!goalieLabel&&pc!==null?'<div class="team-name-sub">'+pc+' player'+(pc!==1?'s':'')+'</div>':''}
     <div class="score-num" id="${pre}${g.id}-${side}">${score}</div>
     ${!compact?`<div class="score-controls">
       <button class="score-btn minus" onclick="updateScore('${g.id}','${side}',-1)">−</button>
@@ -963,7 +1030,103 @@ function sideHTML(g,side,compact){
   </div>`;
 }
 
-function gameCardHTML(g,compact){
+// helper for goalie display — reuses jersey map built at render time
+function playerDisplayNameG(name){
+  const jerseyMap={};
+  ['men','women','youth'].forEach(d=>(state.teams[d]||[]).forEach(t=>normPlayers(t.players).forEach(p=>{ if(p.number!=='') jerseyMap[p.name]=p.number; })));
+  return jerseyMap[name]?'#'+jerseyMap[name]+' '+name:name;
+}
+
+function goalieAndShotsPanelHTML(g){
+  const {homePlayers,awayPlayers}=getGamePlayers(g);
+  const hOpts=playerOptions(homePlayers,'— no goalie —');
+  const aOpts=playerOptions(awayPlayers,'— no goalie —');
+  const hWide=g.homeShotsWide||0, aWide=g.awayShotsWide||0;
+  const hSaves=g.homeSaves||0, aSaves=g.awaySaves||0;
+  const hGoals=g.awayScore||0, aGoals=g.homeScore||0; // goals against home = away score
+  // Total shots by team = their own wide + saves by opp goalie + goals scored
+  const hTotalShots=hWide+aSaves+aGoals; // home team's total shots (wide + saved by away goalie + goals)
+  const aTotalShots=aWide+hSaves+hGoals;
+  // Save % = saves / (saves + goals against) = saves / shots on target
+  function svPct(saves,goalsAgainst){ const tot=saves+goalsAgainst; if(!tot) return '—'; return ((saves/tot)*100).toFixed(1)+'%'; }
+  function ctrHTML(gid,field,val){
+    return `<div style="display:flex;align-items:center;justify-content:center;gap:5px">
+      <button class="score-btn minus" onclick="adjustStat('${gid}','${field}',-1)">−</button>
+      <span id="stat-${field}-${gid}" style="min-width:20px;text-align:center;font-weight:600">${val}</span>
+      <button class="score-btn plus" onclick="adjustStat('${gid}','${field}',1)">+</button>
+    </div>`;
+  }
+  const thStyle='text-align:center;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.4px';
+  const tdStyle='text-align:center;padding:5px 6px';
+  const rowStyle='border-top:1px solid var(--border)';
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+      <div>
+        <div class="section-label" style="margin-bottom:.4rem">${g.homeTeam} — Goalie</div>
+        <select id="goalie-home-${g.id}" onchange="setGoalie('${g.id}','home',this.value)">${hOpts}</select>
+        ${g.homeGoalie?`<script>document.getElementById('goalie-home-${g.id}').value='${esc(g.homeGoalie)}'<\/script>`:''}
+      </div>
+      <div>
+        <div class="section-label" style="margin-bottom:.4rem">${g.awayTeam} — Goalie</div>
+        <select id="goalie-away-${g.id}" onchange="setGoalie('${g.id}','away',this.value)">${aOpts}</select>
+        ${g.awayGoalie?`<script>document.getElementById('goalie-away-${g.id}').value='${esc(g.awayGoalie)}'<\/script>`:''}
+      </div>
+    </div>
+    <div class="section-label" style="margin-bottom:.5rem">Shots & saves</div>
+    <table style="width:100%;font-size:13px;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.4px"></th>
+        <th style="${thStyle}">${g.homeTeam}</th>
+        <th style="${thStyle}">${g.awayTeam}</th>
+      </tr></thead>
+      <tbody>
+        <tr style="${rowStyle}">
+          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Shots wide</td>
+          <td style="${tdStyle}">${ctrHTML(g.id,'homeShotsWide',hWide)}</td>
+          <td style="${tdStyle}">${ctrHTML(g.id,'awayShotsWide',aWide)}</td>
+        </tr>
+        <tr style="${rowStyle}">
+          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Saves</td>
+          <td style="${tdStyle}">${ctrHTML(g.id,'homeSaves',hSaves)}</td>
+          <td style="${tdStyle}">${ctrHTML(g.id,'awaySaves',aSaves)}</td>
+        </tr>
+        <tr style="${rowStyle};background:var(--bg)">
+          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Total shots <span style="font-size:10px;color:var(--text-hint)">(wide+saves+goals)</span></td>
+          <td style="${tdStyle};font-weight:600" id="stat-homeTotalShots-${g.id}">${hTotalShots}</td>
+          <td style="${tdStyle};font-weight:600" id="stat-awayTotalShots-${g.id}">${aTotalShots}</td>
+        </tr>
+        <tr style="${rowStyle};background:var(--bg)">
+          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Save % <span style="font-size:10px;color:var(--text-hint)">(saves÷shots on target)</span></td>
+          <td style="${tdStyle};font-weight:700" id="stat-homeSvPct-${g.id}">${svPct(hSaves,hGoals)}</td>
+          <td style="${tdStyle};font-weight:700" id="stat-awaySvPct-${g.id}">${svPct(aSaves,aGoals)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+window.setGoalie=function(gameId,side,name){
+  const g=state.games.find(g=>g.id===gameId); if(!g) return;
+  if(side==='home') g.homeGoalie=name; else g.awayGoalie=name;
+  scheduleSave(); renderAllGames(); renderOverview();
+};
+
+window.adjustStat=function(gameId,field,delta){
+  const g=state.games.find(g=>g.id===gameId); if(!g) return;
+  g[field]=Math.max(0,(g[field]||0)+delta);
+  const el=document.getElementById('stat-'+field+'-'+gameId);
+  if(el) el.textContent=g[field];
+  // recompute derived stats inline
+  const hWide=g.homeShotsWide||0, aWide=g.awayShotsWide||0;
+  const hSaves=g.homeSaves||0, aSaves=g.awaySaves||0;
+  const hGoals=g.awayScore||0, aGoals=g.homeScore||0;
+  const hTotal=hWide+aSaves+aGoals, aTotal=aWide+hSaves+hGoals;
+  function svPct(saves,ga){ const t=saves+ga; if(!t) return '—'; return ((saves/t)*100).toFixed(1)+'%'; }
+  const htEl=document.getElementById('stat-homeTotalShots-'+gameId); if(htEl) htEl.textContent=hTotal;
+  const atEl=document.getElementById('stat-awayTotalShots-'+gameId); if(atEl) atEl.textContent=aTotal;
+  const hpEl=document.getElementById('stat-homeSvPct-'+gameId); if(hpEl) hpEl.textContent=svPct(hSaves,hGoals);
+  const apEl=document.getElementById('stat-awaySvPct-'+gameId); if(apEl) apEl.textContent=svPct(aSaves,aGoals);
+  scheduleSave();
+};
   const elapsed=g.status==='live'&&g.startedAt?Math.floor((Date.now()-g.startedAt)/1000):(g.elapsed||0);
   const refChips=(g.refs||[]).map(r=>'<span class="info-chip">🟡 '+r+'</span>').join('');
   const benchChips=(g.bench||[]).map(b=>'<span class="info-chip">📋 '+b+'</span>').join('');
@@ -980,6 +1143,8 @@ function gameCardHTML(g,compact){
       <button class="game-subtab" id="stab-${g.id}-log" onclick="switchSubTab('${g.id}','log')">📜 Log${evCount?' ('+evCount+')':''}</button>
     </div>
     <div id="sp-${g.id}-score" class="subpanel active">
+      ${goalieAndShotsPanelHTML(g)}
+      <hr>
       <div class="section-label">Referees</div>
       <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem" id="assign-refs-${g.id}"></div>
       <div class="section-label">Bench officials</div>
