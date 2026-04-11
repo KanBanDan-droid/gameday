@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🥍 Lacrosse Game Day</title>
+<script>
+// Run before CSS parses to avoid flash of wrong theme
+try{
+  var t=localStorage.getItem('theme');
+  var d=t?t==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;
+  document.documentElement.setAttribute('data-theme',d?'dark':'light');
+}catch(e){}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1405,24 +1413,36 @@ function showToast(msg,isError){
 // ---- THEME TOGGLE ----
 function applyTheme(dark){
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  document.getElementById('theme-icon').textContent = dark ? '🌙' : '☀️';
-  document.getElementById('toggle-track').classList.toggle('on', dark);
-  document.getElementById('toggle-thumb').classList.toggle('on', dark);
+  const icon = document.getElementById('theme-icon');
+  const track = document.getElementById('toggle-track');
+  const thumb = document.getElementById('toggle-thumb');
+  if(icon) icon.textContent = dark ? '🌙' : '☀️';
+  if(track) track.classList.toggle('on', dark);
+  if(thumb) thumb.classList.toggle('on', dark);
 }
 
-function toggleTheme(){
+window.toggleTheme=function(){
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const next = !isDark;
-  localStorage.setItem('theme', next ? 'dark' : 'light');
+  try{ localStorage.setItem('theme', next ? 'dark' : 'light'); } catch(e){}
   applyTheme(next);
-}
+};
 
-// Init theme on load
+// Apply saved/preferred theme immediately (before DOM paint)
 (function(){
-  const saved = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyTheme(saved ? saved === 'dark' : prefersDark);
+  try{
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = saved ? saved === 'dark' : prefersDark;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  } catch(e){}
 })();
+
+// Update toggle button visuals once DOM is ready
+document.addEventListener('DOMContentLoaded', ()=>{
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(dark);
+});
 
 window.showToast=showToast;
 </script>
