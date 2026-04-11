@@ -1133,14 +1133,14 @@ function goalieAndShotsPanelHTML(g){
     <table style="width:100%;font-size:13px;border-collapse:collapse">
       <thead><tr>
         <th style="text-align:left;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.4px"></th>
-        <th style="${thStyle}">${g.homeTeam}</th>
-        <th style="${thStyle}">${g.awayTeam}</th>
+        <th style="${thStyle}">${g.homeGoalie?'🥅 '+playerDisplayNameG(g.homeGoalie):g.homeTeam+' goalie'}</th>
+        <th style="${thStyle}">${g.awayGoalie?'🥅 '+playerDisplayNameG(g.awayGoalie):g.awayTeam+' goalie'}</th>
       </tr></thead>
       <tbody>
         <tr style="${rowStyle}">
-          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Shots wide</td>
-          <td style="${tdStyle}">${ctrHTML(g.id,'homeShotsWide',hWide)}</td>
+          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Shots wide <span style="font-size:10px;color:var(--text-hint)">(against this goalie)</span></td>
           <td style="${tdStyle}">${ctrHTML(g.id,'awayShotsWide',aWide)}</td>
+          <td style="${tdStyle}">${ctrHTML(g.id,'homeShotsWide',hWide)}</td>
         </tr>
         <tr style="${rowStyle}">
           <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Saves</td>
@@ -1148,9 +1148,9 @@ function goalieAndShotsPanelHTML(g){
           <td style="${tdStyle}">${ctrHTML(g.id,'awaySaves',aSaves)}</td>
         </tr>
         <tr style="${rowStyle};background:var(--bg)">
-          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Total shots <span style="font-size:10px;color:var(--text-hint)">(wide+saves+goals)</span></td>
-          <td style="${tdStyle};font-weight:600" id="stat-homeTotalShots-${g.id}">${hTotalShots}</td>
-          <td style="${tdStyle};font-weight:600" id="stat-awayTotalShots-${g.id}">${aTotalShots}</td>
+          <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Goals against</td>
+          <td style="${tdStyle};font-weight:600">${hGoals}</td>
+          <td style="${tdStyle};font-weight:600">${aGoals}</td>
         </tr>
         <tr style="${rowStyle};background:var(--bg)">
           <td style="padding:5px 6px;color:var(--text-muted);font-weight:500">Save % <span style="font-size:10px;color:var(--text-hint)">(saves÷shots on target)</span></td>
@@ -1172,14 +1172,10 @@ window.adjustStat=function(gameId,field,delta){
   g[field]=Math.max(0,(g[field]||0)+delta);
   const el=document.getElementById('stat-'+field+'-'+gameId);
   if(el) el.textContent=g[field];
-  // recompute derived stats inline
-  const hWide=g.homeShotsWide||0, aWide=g.awayShotsWide||0;
+  // recompute save % inline
   const hSaves=g.homeSaves||0, aSaves=g.awaySaves||0;
   const hGoals=g.awayScore||0, aGoals=g.homeScore||0;
-  const hTotal=hWide+aSaves+aGoals, aTotal=aWide+hSaves+hGoals;
   function svPct(saves,ga){ const t=saves+ga; if(!t) return '—'; return ((saves/t)*100).toFixed(1)+'%'; }
-  const htEl=document.getElementById('stat-homeTotalShots-'+gameId); if(htEl) htEl.textContent=hTotal;
-  const atEl=document.getElementById('stat-awayTotalShots-'+gameId); if(atEl) atEl.textContent=aTotal;
   const hpEl=document.getElementById('stat-homeSvPct-'+gameId); if(hpEl) hpEl.textContent=svPct(hSaves,hGoals);
   const apEl=document.getElementById('stat-awaySvPct-'+gameId); if(apEl) apEl.textContent=svPct(aSaves,aGoals);
   scheduleSave();
