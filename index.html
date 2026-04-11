@@ -22,7 +22,7 @@
   --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
 }
 @media(prefers-color-scheme:dark){
-  :root{
+  :root:not([data-theme="light"]){
     --text:#f3f4f6;--text-muted:#9ca3af;--text-hint:#6b7280;
     --bg:#111827;--surface:#1f2937;--border:#374151;--border-strong:#4b5563;
     --men-bg:#1e3a5f;--men-text:#93c5fd;--women-bg:#4a1942;--women-text:#f9a8d4;
@@ -31,6 +31,24 @@
     --goal-bg:#14532d;--goal-text:#86efac;--goal-border:#166534;
     --penalty-bg:#431407;--penalty-text:#fed7aa;--penalty-border:#9a3412;
   }
+}
+:root[data-theme="dark"]{
+  --text:#f3f4f6;--text-muted:#9ca3af;--text-hint:#6b7280;
+  --bg:#111827;--surface:#1f2937;--border:#374151;--border-strong:#4b5563;
+  --men-bg:#1e3a5f;--men-text:#93c5fd;--women-bg:#4a1942;--women-text:#f9a8d4;
+  --youth-bg:#064e3b;--youth-text:#6ee7b7;--live-bg:#450a0a;--live-text:#fca5a5;
+  --scheduled-bg:#1e3a5f;--scheduled-text:#93c5fd;--finished-bg:#1f2937;--finished-text:#9ca3af;
+  --goal-bg:#14532d;--goal-text:#86efac;--goal-border:#166534;
+  --penalty-bg:#431407;--penalty-text:#fed7aa;--penalty-border:#9a3412;
+}
+:root[data-theme="light"]{
+  --text:#1a1a1a;--text-muted:#6b7280;--text-hint:#9ca3af;
+  --bg:#f3f4f6;--surface:#fff;--border:#e5e7eb;--border-strong:#d1d5db;
+  --men-bg:#dbeafe;--men-text:#1e40af;--women-bg:#fce7f3;--women-text:#9d174d;
+  --youth-bg:#d1fae5;--youth-text:#065f46;--live-bg:#fee2e2;--live-text:#991b1b;
+  --scheduled-bg:#eff6ff;--scheduled-text:#1d4ed8;--finished-bg:#f3f4f6;--finished-text:#374151;
+  --goal-bg:#dcfce7;--goal-text:#166534;--goal-border:#86efac;
+  --penalty-bg:#fff7ed;--penalty-text:#9a3412;--penalty-border:#fed7aa;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.5}
 .app{max-width:1100px;margin:0 auto;padding:1rem}
@@ -124,6 +142,12 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#fff;padding:.6rem 1.1rem;border-radius:var(--radius-sm);font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .25s;z-index:1000}
 .toast.show{transform:translateY(0);opacity:1}
 .or-divider{align-self:center;color:var(--text-hint);font-size:12px;flex-shrink:0;padding-top:16px}
+.theme-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-pill);padding:5px 10px;color:#fff;font-size:12px;font-weight:500;transition:background .15s}
+.theme-toggle:hover{background:rgba(255,255,255,.25)}
+.toggle-track{width:32px;height:18px;background:rgba(255,255,255,.3);border-radius:9px;position:relative;flex-shrink:0;transition:background .2s}
+.toggle-track.on{background:rgba(255,255,255,.6)}
+.toggle-thumb{width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-thumb.on{left:16px}
 .event-log{margin-top:.5rem;display:flex;flex-direction:column;gap:.4rem}
 .event-item{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem .7rem;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px}
 .event-item.goal{background:var(--goal-bg);border-color:var(--goal-border)}
@@ -184,6 +208,10 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
     <div class="header-inputs">
       <input type="date" class="header-input" id="event-date">
       <input type="text" class="header-input" id="event-venue" placeholder="Venue" style="width:150px">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Toggle dark/light mode">
+        <span id="theme-icon">🌙</span>
+        <div class="toggle-track" id="toggle-track"><div class="toggle-thumb" id="toggle-thumb"></div></div>
+      </button>
     </div>
   </div>
 
@@ -1215,7 +1243,7 @@ function gameCardHTML(g,compact){
     <div id="sp-${g.id}-penalty" class="subpanel">${penaltyFormHTML(g)}</div>
     <div id="sp-${g.id}-log" class="subpanel"><div class="event-log">${eventLogHTML(g)}</div></div>`);
 
-  const recentEvents=compact&&evCount?`
+  const recentEvents=compact&&evCount&&g.status!=='finished'?`
     <div class="event-log" style="margin-top:.5rem">
       ${(g.events||[]).slice().sort((a,b)=>b.time-a.time).slice(0,3).map(ev=>{
         const tLabel=ev.timeLabel||fmtTime(ev.time);
@@ -1224,6 +1252,42 @@ function gameCardHTML(g,compact){
           :`<div class="event-item penalty"><span class="event-icon">🟨</span><div class="event-body"><div class="event-main">${ev.player} <span style="font-size:11px;font-weight:400">${ev.team}</span></div><div class="event-detail">${ev.penType||''}</div></div><span class="event-time">${tLabel}</span></div>`;
       }).join('')}
     </div>`:'';
+
+  // Finished game expandable stats panel (overview only)
+  const finishedExpanded = compact && g.status==='finished' ? `
+    <div id="ov-expand-${g.id}" style="display:none">
+      <hr>
+      <div class="section-label" style="margin-bottom:.5rem">Full event log</div>
+      <div class="event-log">${eventLogHTML(g)}</div>
+      ${(g.homeGoalie||g.awayGoalie)?`<hr><div class="section-label" style="margin-bottom:.5rem">Goalie stats</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.4px">Goalie</th>
+          <th style="text-align:center;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase">Saves</th>
+          <th style="text-align:center;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase">GA</th>
+          <th style="text-align:center;padding:4px 6px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase">SV%</th>
+        </tr></thead>
+        <tbody>
+          ${g.homeGoalie?`<tr style="border-top:1px solid var(--border)">
+            <td style="padding:5px 6px">${playerDisplayNameG(g.homeGoalie)} <span style="font-size:10px;font-weight:700;background:var(--scheduled-bg);color:var(--scheduled-text);padding:1px 5px;border-radius:3px">G</span> <span style="font-size:11px;color:var(--text-hint)">${g.homeTeam}</span></td>
+            <td style="text-align:center;padding:5px 6px;font-weight:600">${g.homeSaves||0}</td>
+            <td style="text-align:center;padding:5px 6px">${g.awayScore||0}</td>
+            <td style="text-align:center;padding:5px 6px;font-weight:700">${(()=>{const t=(g.homeSaves||0)+(g.awayScore||0);return t?((g.homeSaves||0)/t*100).toFixed(1)+'%':'—';})()}</td>
+          </tr>`:''}
+          ${g.awayGoalie?`<tr style="border-top:1px solid var(--border)">
+            <td style="padding:5px 6px">${playerDisplayNameG(g.awayGoalie)} <span style="font-size:10px;font-weight:700;background:var(--scheduled-bg);color:var(--scheduled-text);padding:1px 5px;border-radius:3px">G</span> <span style="font-size:11px;color:var(--text-hint)">${g.awayTeam}</span></td>
+            <td style="text-align:center;padding:5px 6px;font-weight:600">${g.awaySaves||0}</td>
+            <td style="text-align:center;padding:5px 6px">${g.homeScore||0}</td>
+            <td style="text-align:center;padding:5px 6px;font-weight:700">${(()=>{const t=(g.awaySaves||0)+(g.homeScore||0);return t?((g.awaySaves||0)/t*100).toFixed(1)+'%':'—';})()}</td>
+          </tr>`:''}
+        </tbody>
+      </table>`:''}
+    </div>` : '';
+
+  const expandToggle = compact && g.status==='finished' ? `
+    <div style="margin-top:.6rem;text-align:center">
+      <button class="toggle-link" id="ov-expand-btn-${g.id}" onclick="toggleOvExpand('${g.id}')">▼ Show full stats</button>
+    </div>` : '';
 
   return `<div class="game-card status-${g.status}" id="${compact?'ov-':''}game-${g.id}">
     <div class="game-header">
@@ -1237,6 +1301,8 @@ function gameCardHTML(g,compact){
     <div class="game-teams">${sideHTML(g,'home',compact)}<div class="score-vs">vs</div>${sideHTML(g,'away',compact)}</div>
     <div class="info-row">${refChips}${benchChips}</div>
     ${recentEvents}
+    ${finishedExpanded}
+    ${expandToggle}
     ${controls}
   </div>`;
 }
@@ -1269,6 +1335,15 @@ function renderAssignPanels(id){
 }
 
 let ovFilter='all';
+window.toggleOvExpand=function(gameId){
+  const panel=document.getElementById('ov-expand-'+gameId);
+  const btn=document.getElementById('ov-expand-btn-'+gameId);
+  if(!panel||!btn) return;
+  const open=panel.style.display==='none';
+  panel.style.display=open?'block':'none';
+  btn.textContent=open?'▲ Hide stats':'▼ Show full stats';
+};
+
 window.setOverviewFilter=function(f){
   ovFilter=f;
   ['all','men','women','youth'].forEach(v=>{
@@ -1292,7 +1367,12 @@ function renderOverview(){
     <div class="stat-card"><div class="stat-label">Players</div><div class="stat-value">${totalPlayers}</div></div>`;
   const el=document.getElementById('overview-games');
   if(!filtered.length){ el.innerHTML='<div class="empty card" style="text-align:center;padding:2rem">No games scheduled yet.</div>'; return; }
-  const sorted=[...filtered].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const statusOrder={live:0,scheduled:1,finished:2};
+  const sorted=[...filtered].sort((a,b)=>{
+    const sw=(statusOrder[a.status]??1)-(statusOrder[b.status]??1);
+    if(sw!==0) return sw;
+    return (a.time||'').localeCompare(b.time||'');
+  });
   el.innerHTML=sorted.map(g=>gameCardHTML(g,true)).join('');
   filtered.forEach(g=>{ if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id); });
 }
@@ -1322,6 +1402,28 @@ function showToast(msg,isError){
   t.classList.add('show'); if(toastTimer) clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
+// ---- THEME TOGGLE ----
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-icon').textContent = dark ? '🌙' : '☀️';
+  document.getElementById('toggle-track').classList.toggle('on', dark);
+  document.getElementById('toggle-thumb').classList.toggle('on', dark);
+}
+
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = !isDark;
+  localStorage.setItem('theme', next ? 'dark' : 'light');
+  applyTheme(next);
+}
+
+// Init theme on load
+(function(){
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ? saved === 'dark' : prefersDark);
+})();
+
 window.showToast=showToast;
 </script>
 </body>
