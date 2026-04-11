@@ -29,18 +29,7 @@ try{
   --penalty-bg:#fff7ed;--penalty-text:#9a3412;--penalty-border:#fed7aa;
   --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
 }
-@media(prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --text:#f3f4f6;--text-muted:#9ca3af;--text-hint:#6b7280;
-    --bg:#111827;--surface:#1f2937;--border:#374151;--border-strong:#4b5563;
-    --men-bg:#1e3a5f;--men-text:#93c5fd;--women-bg:#4a1942;--women-text:#f9a8d4;
-    --youth-bg:#064e3b;--youth-text:#6ee7b7;--live-bg:#450a0a;--live-text:#fca5a5;
-    --scheduled-bg:#1e3a5f;--scheduled-text:#93c5fd;--finished-bg:#1f2937;--finished-text:#9ca3af;
-    --goal-bg:#14532d;--goal-text:#86efac;--goal-border:#166534;
-    --penalty-bg:#431407;--penalty-text:#fed7aa;--penalty-border:#9a3412;
-  }
-}
-:root[data-theme="dark"]{
+html[data-theme="dark"]{
   --text:#f3f4f6;--text-muted:#9ca3af;--text-hint:#6b7280;
   --bg:#111827;--surface:#1f2937;--border:#374151;--border-strong:#4b5563;
   --men-bg:#1e3a5f;--men-text:#93c5fd;--women-bg:#4a1942;--women-text:#f9a8d4;
@@ -48,15 +37,6 @@ try{
   --scheduled-bg:#1e3a5f;--scheduled-text:#93c5fd;--finished-bg:#1f2937;--finished-text:#9ca3af;
   --goal-bg:#14532d;--goal-text:#86efac;--goal-border:#166534;
   --penalty-bg:#431407;--penalty-text:#fed7aa;--penalty-border:#9a3412;
-}
-:root[data-theme="light"]{
-  --text:#1a1a1a;--text-muted:#6b7280;--text-hint:#9ca3af;
-  --bg:#f3f4f6;--surface:#fff;--border:#e5e7eb;--border-strong:#d1d5db;
-  --men-bg:#dbeafe;--men-text:#1e40af;--women-bg:#fce7f3;--women-text:#9d174d;
-  --youth-bg:#d1fae5;--youth-text:#065f46;--live-bg:#fee2e2;--live-text:#991b1b;
-  --scheduled-bg:#eff6ff;--scheduled-text:#1d4ed8;--finished-bg:#f3f4f6;--finished-text:#374151;
-  --goal-bg:#dcfce7;--goal-text:#166534;--goal-border:#86efac;
-  --penalty-bg:#fff7ed;--penalty-text:#9a3412;--penalty-border:#fed7aa;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.5}
 .app{max-width:1100px;margin:0 auto;padding:1rem}
@@ -193,6 +173,20 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
 .rank-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;background:var(--bg);color:var(--text-muted);flex-shrink:0}
 .rank-num.gold{background:#fef08a;color:#713f12}
 .rank-num.silver{background:#e2e8f0;color:#334155}
+
+/* Standings table */
+.standings-table{width:100%;border-collapse:collapse;font-size:13px}
+.standings-table th{padding:7px 10px;font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap;text-align:center}
+.standings-table th:first-child{text-align:left;padding-left:12px}
+.standings-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;font-variant-numeric:tabular-nums;vertical-align:middle}
+.standings-table td:first-child{text-align:left;font-weight:600;padding-left:12px}
+.standings-table tr:last-child td{border-bottom:none}
+.standings-table tr:hover td{background:var(--bg)}
+.standings-table td.pts{font-weight:700;font-size:14px}
+.standings-table .pos{width:28px;color:var(--text-hint);font-size:12px;font-weight:700}
+.standings-division{margin-bottom:1.5rem}
+.standings-division-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:2px solid var(--border)}
+.standings-division-title{font-size:16px;font-weight:700}
 .rank-num.bronze{background:#fed7aa;color:#7c2d12}
 .stats-filter{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center}
 .stats-filter label{font-size:12px;font-weight:600;color:var(--text-muted)}
@@ -229,6 +223,7 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
     <div class="tab" onclick="switchTab('teams')">👥 Teams 🔒</div>
     <div class="tab" onclick="switchTab('officials')">🦺 Officials 🔒</div>
     <div class="tab" onclick="switchTab('stats')">📊 Statistics</div>
+    <div class="tab" onclick="switchTab('standings')">🏆 Standings</div>
   </div>
 
   <!-- OVERVIEW -->
@@ -372,6 +367,11 @@ hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
     <div id="stats-content"></div>
   </div>
 
+  <!-- STANDINGS -->
+  <div id="tab-standings" class="panel">
+    <div id="standings-content"></div>
+  </div>
+
   <!-- PASSWORD MODAL -->
   <div id="pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem 1.75rem;width:min(320px,90vw);box-shadow:0 8px 32px rgba(0,0,0,.2)">
@@ -444,6 +444,7 @@ function applyState(){
   ['refs','bench'].forEach(renderOfficials);
   renderAllGames(); renderOverview(); updateTeamDropdowns();
   updateStatsTeamFilter();
+  if(document.getElementById('tab-standings')?.classList.contains('active')) renderStandings();
 }
 
 function updateMeta(){
@@ -466,12 +467,13 @@ window.switchTab=function(tab){
     openPwModal();
     return;
   }
-  ['overview','games','teams','officials','stats'].forEach((t,i)=>document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab));
+  ['overview','games','teams','officials','stats','standings'].forEach((t,i)=>document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='overview') renderOverview();
   if(tab==='games') updateTeamDropdowns();
   if(tab==='stats'){ updateStatsTeamFilter(); renderStats(); }
+  if(tab==='standings') renderStandings();
 };
 
 function openPwModal(){
@@ -1384,6 +1386,117 @@ function renderOverview(){
   el.innerHTML=sorted.map(g=>gameCardHTML(g,true)).join('');
   filtered.forEach(g=>{ if(g.status==='live'&&g.startedAt&&!gameTimers[g.id]) startTimer(g.id); });
 }
+
+window.renderStandings=function(){
+  const el=document.getElementById('standings-content');
+  if(!el) return;
+
+  // Build standings per division
+  function buildDivStandings(div){
+    const divGames=state.games.filter(g=>g.division===div&&g.status==='finished');
+    // collect all teams in this division
+    const teamNames=new Set();
+    (state.teams[div]||[]).forEach(t=>teamNames.add(t.name));
+    divGames.forEach(g=>{ teamNames.add(g.homeTeam); teamNames.add(g.awayTeam); });
+
+    const rows={};
+    teamNames.forEach(name=>{
+      rows[name]={name,gp:0,w:0,l:0,otl:0,pts:0,gf:0,ga:0,l5:[]};
+    });
+
+    divGames.forEach(g=>{
+      const h=rows[g.homeTeam], a=rows[g.awayTeam];
+      if(!h||!a) return;
+      const hg=g.homeScore||0, ag=g.awayScore||0;
+      h.gp++; a.gp++;
+      h.gf+=hg; h.ga+=ag;
+      a.gf+=ag; a.ga+=hg;
+      if(hg>ag){
+        h.w++; h.pts+=2; h.l5.push('W');
+        a.l++; a.l5.push('L');
+      } else if(ag>hg){
+        a.w++; a.pts+=2; a.l5.push('W');
+        h.l++; h.l5.push('L');
+      } else {
+        // tie → OTL for both (lacrosse rarely ends in draw, but handle it)
+        h.otl++; h.pts+=1; h.l5.push('O');
+        a.otl++; a.pts+=1; a.l5.push('O');
+      }
+    });
+
+    return Object.values(rows).sort((a,b)=>{
+      if(b.pts!==a.pts) return b.pts-a.pts;
+      if(b.w!==a.w) return b.w-a.w;
+      const adiff=a.gf-a.ga, bdiff=b.gf-b.ga;
+      return bdiff-adiff;
+    });
+  }
+
+  function l5HTML(l5arr){
+    const last5=l5arr.slice(-5);
+    return last5.map(r=>{
+      const bg=r==='W'?'#dcfce7':r==='L'?'#fee2e2':'#fef9c3';
+      const col=r==='W'?'#166534':r==='L'?'#991b1b':'#854d0e';
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${bg};color:${col};font-size:10px;font-weight:700;margin:0 1px">${r}</span>`;
+    }).join('');
+  }
+
+  function divTable(div, label, badge){
+    const rows=buildDivStandings(div);
+    if(!rows.length) return `<div class="standings-division">
+      <div class="standings-division-header"><span class="standings-division-title">${label}</span>${badge}</div>
+      <div class="empty">No finished games yet.</div>
+    </div>`;
+
+    const bodyRows=rows.map((t,i)=>{
+      const diff=t.gf-t.ga;
+      const diffStr=(diff>0?'+':'')+diff;
+      const diffCol=diff>0?'#166534':diff<0?'#991b1b':'var(--text-muted)';
+      return `<tr>
+        <td class="pos">${i+1}</td>
+        <td style="font-weight:600">${t.name}</td>
+        <td>${t.gp}</td>
+        <td style="color:#166534;font-weight:700">${t.w}</td>
+        <td style="color:#991b1b;font-weight:700">${t.l}</td>
+        <td>${t.otl}</td>
+        <td class="pts">${t.pts}</td>
+        <td>${t.gf}</td>
+        <td>${t.ga}</td>
+        <td style="color:${diffCol};font-weight:600">${diffStr}</td>
+        <td style="white-space:nowrap">${l5HTML(t.l5)}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="standings-division">
+      <div class="standings-division-header">
+        <span class="standings-division-title">${label}</span>${badge}
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="standings-table">
+          <thead><tr>
+            <th class="pos"></th>
+            <th style="text-align:left;padding-left:12px">Team</th>
+            <th title="Games played">GP</th>
+            <th title="Wins">W</th>
+            <th title="Losses">L</th>
+            <th title="Overtime losses">OTL</th>
+            <th title="Points">PTS</th>
+            <th title="Goals for">GF</th>
+            <th title="Goals against">GA</th>
+            <th title="Goal differential">DIFF</th>
+            <th title="Last 5 games">L5</th>
+          </tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML =
+    divTable('men',   'Men',   '<span class="badge badge-men">Men</span>') +
+    divTable('women', 'Women', '<span class="badge badge-women">Women</span>') +
+    divTable('youth', 'Youth', '<span class="badge badge-youth">Youth</span>');
+};
 
 window.addOfficial=function(type){
   const inp=document.getElementById(type==='refs'?'ref-input':'bench-input'), name=inp.value.trim(); if(!name) return;
