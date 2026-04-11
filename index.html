@@ -913,27 +913,27 @@ window.renderStats=function(){
   }
 
   function aggregateGoalies(games){
-    // home goalie faces away team's shots; away goalie faces home team's shots
-    // shots = shotsWide (by attacker) + saves (by goalie) + goals scored
-    // Save% = saves / (saves + goalsAgainst) i.e. saves / shots on target
+    // homeSaves = saves made by the home goalie (facing away team's shots)
+    // awaySaves = saves made by the away goalie (facing home team's shots)
+    // Save% = saves / (saves + goalsAgainst) — shots wide excluded
     const goalies={};
     function getG(name){ if(!name||!name.trim()) return null; if(!goalies[name]) goalies[name]={totalShots:0,shotsWide:0,saves:0,goalsAgainst:0,gamesPlayed:0}; return goalies[name]; }
     games.forEach(g=>{
       const hG=getG(g.homeGoalie); const aG=getG(g.awayGoalie);
-      // home goalie faces away team's attack
+      // home goalie faces away team's attack → home goalie's saves = homeSaves, goals against = awayScore
       if(hG){
+        hG.saves+=g.homeSaves||0;
         hG.shotsWide+=g.awayShotsWide||0;
-        hG.saves+=g.awaySaves||0;
         hG.goalsAgainst+=g.awayScore||0;
-        hG.totalShots+=(g.awayShotsWide||0)+(g.awaySaves||0)+(g.awayScore||0);
+        hG.totalShots+=(g.awayShotsWide||0)+(g.homeSaves||0)+(g.awayScore||0);
         hG.gamesPlayed++;
       }
-      // away goalie faces home team's attack
+      // away goalie faces home team's attack → away goalie's saves = awaySaves, goals against = homeScore
       if(aG){
+        aG.saves+=g.awaySaves||0;
         aG.shotsWide+=g.homeShotsWide||0;
-        aG.saves+=g.homeSaves||0;
         aG.goalsAgainst+=g.homeScore||0;
-        aG.totalShots+=(g.homeShotsWide||0)+(g.homeSaves||0)+(g.homeScore||0);
+        aG.totalShots+=(g.homeShotsWide||0)+(g.awaySaves||0)+(g.homeScore||0);
         aG.gamesPlayed++;
       }
     });
